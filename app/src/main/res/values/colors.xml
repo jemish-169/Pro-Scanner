@@ -7,4 +7,20 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <color name="app_icon_background">#F7F7F7</color>
+
+<!--    Theme.Scanner.PdfViewer-->
+    <color name="primary">#2F4FCD</color>
+    <color name="onPrimary">#FFFFFF</color>
+    <color name="primaryContainer">#DDDBFF</color>
+    <color name="onPrimaryContainer">#232323</color>
+    <color name="secondary">#ADADAD</color>
+    <color name="onSecondary">#232323</color>
+    <color name="secondaryContainer">#525252</color>
+    <color name="onSecondaryContainer">#FFFFFF</color>
+    <color name="background">#FFFFFF</color>
+    <color name="onBackground">#232323</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="onSurface">#232323</color>
 </resources>

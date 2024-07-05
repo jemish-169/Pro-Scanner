@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <paths>
+        <external-path name="external_files" path="."/>
+        <cache-path name="mlkit_docscan_ui_client" path="." />
+        <files-path name="Pro scanner" path="/"/>
+        <files-path name="files" path="."/>
+    </paths>
+</resources>

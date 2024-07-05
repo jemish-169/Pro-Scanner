@@ -2,4 +2,25 @@
 <resources>
 
     <style name="Theme.Scanner" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.Scanner.PdfViewer" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/primary</item>
+        <item name="colorOnPrimary">@color/onPrimary</item>
+        <item name="colorSecondary">@color/secondary</item>
+        <item name="colorOnSecondary">@color/onSecondary</item>
+        <item name="colorPrimaryContainer">@color/primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/onPrimaryContainer</item>
+        <item name="colorSecondaryContainer">@color/secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/onSecondaryContainer</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="colorOnBackground">@color/onBackground</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/onSurface</item>
+    </style>
+
+    <!--    <style name="Theme.App.Starting" parent="Theme.SplashScreen">-->
+    <!--        <item name="windowSplashScreenBackground">@color/app_icon_background</item>-->
+    <!--        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>-->
+    <!--        <item name="postSplashScreenTheme">@style/Theme.Scanner</item>-->
+    <!--    </style>-->
 </resources>

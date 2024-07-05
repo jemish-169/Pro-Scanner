@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -62,6 +63,10 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -69,6 +74,28 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1")
-    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // ML-kit for scanner
+    implementation(libs.play.services.mlkit.document.scanner)
+
+    // loading images efficiently
+    implementation(libs.coil.compose)
+
+    // Navigation class
+    implementation(libs.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
+
+    // Splash API
+//    implementation (libs.androidx.core.splashscreen)
+
+    // Pager and Indicators - Accompanist
+    implementation (libs.accompanist.pager)
+    implementation( libs.accompanist.pager.indicators)
+
+    // pdf Viewer
+    implementation(libs.pdf.viewer)
+
+    // viewmodel in compose
+    implementation (libs.androidx.lifecycle.viewmodel.compose)
+
 }
