@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -56,6 +55,7 @@ import com.app.scanner.util.Preferences
 import com.app.scanner.util.checkAndCreateDirectory
 import com.app.scanner.util.checkAndCreateInternalDirectory
 import com.app.scanner.util.checkPermission
+import com.app.scanner.util.getTodayDate
 import com.app.scanner.util.getVersionName
 import com.app.scanner.util.saveFileInDirectory
 import com.app.scanner.util.showPermissionDialogFrequency
@@ -92,12 +92,52 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainScreen() {
         val navController = rememberNavController()
-        var isOnboarded by remember { mutableStateOf(Preferences.getOnboarded()) }
+        var isOnboarded by remember { mutableStateOf(viewModel.getOnboarded()) }
+        val selectedItem = remember { mutableIntStateOf(1) }
+        val scannerLauncher =
+            rememberLauncherForActivityResult(contract = ActivityResultContracts.StartIntentSenderForResult(),
+                onResult = {
+                    if (it.resultCode == RESULT_OK) {
+                        val scanningResult =
+                            GmsDocumentScanningResult.fromActivityResultIntent(it.data)
+                        scanningResult?.pdf?.let { pdf ->
 
+                            if (checkPermission(this@MainActivity)) {
+                                val file = saveFileInDirectory(
+                                    checkAndCreateDirectory(),
+                                    "Pro Scanner " + getTodayDate(),
+                                    pdf.uri.toFile()
+                                )
+                                viewModel.addDocument(file)
+                            } else {
+                                val file = saveFileInDirectory(
+                                    checkAndCreateInternalDirectory(this@MainActivity),
+                                    "Pro Scanner " + getTodayDate(),
+                                    pdf.uri.toFile()
+                                )
+                                viewModel.addDocument(file)
+                            }
+                        }
+                    }
+                    navController.navigateUp()
+                })
         if (!isOnboarded) {
-            WelcomeScreen(onFinish = { isOnboarded = true })
+            WelcomeScreen(viewModel = viewModel, onFinish = { isOnboarded = true })
         } else {
-            Scaffold(bottomBar = { BottomNavigationBar(navController) }) { innerPadding ->
+            Scaffold(bottomBar = {
+                BottomNavigationBar(
+                    onFilesClick = {
+                        if (selectedItem.intValue != 1) navController.navigateUp()
+                    },
+                    onSettingClick = {
+                        if (selectedItem.intValue != 2) navController.navigate(SettingScreen)
+                    },
+                    onScanDocClick = {
+                        scanDoc(this@MainActivity, scannerLauncher)
+                    },
+                    selectedItem = selectedItem.intValue
+                )
+            }) { innerPadding ->
                 NavHost(
                     navController = navController, startDestination = HomeScreen
                 ) {
@@ -112,11 +152,13 @@ class MainActivity : ComponentActivity() {
                             animationSpec = tween(300)
                         )
                     }) {
+                        selectedItem.intValue = 1
                         HomeScreen(
                             viewModel,
                             context = this@MainActivity,
                             innerPadding,
-                            if (showPermissionDialogFrequency(context = this@MainActivity)) 1 else 0
+                            if (showPermissionDialogFrequency(context = this@MainActivity)) 1 else 0,
+                            viewModel.getIsSwipeToDeleteEnable()
                         )
                     }
                     composable<SettingScreen>(enterTransition = {
@@ -130,7 +172,8 @@ class MainActivity : ComponentActivity() {
                             animationSpec = tween(300)
                         )
                     }) {
-                        SettingScreen(innerPadding, getVersionName(this@MainActivity))
+                        selectedItem.intValue = 2
+                        SettingScreen(viewModel, innerPadding, getVersionName(this@MainActivity))
                     }
                 }
             }
@@ -138,42 +181,19 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun BottomNavigationBar(navController: NavHostController) {
-        val selectedItem = remember { mutableIntStateOf(1) }
-
-        val scannerLauncher =
-            rememberLauncherForActivityResult(contract = ActivityResultContracts.StartIntentSenderForResult(),
-                onResult = {
-                    if (it.resultCode == RESULT_OK) {
-                        val scanningResult =
-                            GmsDocumentScanningResult.fromActivityResultIntent(it.data)
-                        scanningResult?.pdf?.let { pdf ->
-                            if (checkPermission(this@MainActivity)) saveFileInDirectory(
-                                checkAndCreateDirectory(),
-                                pdf.uri.lastPathSegment ?: "",
-                                pdf.uri.toFile()
-                            )
-                            else saveFileInDirectory(
-                                checkAndCreateInternalDirectory(this@MainActivity),
-                                pdf.uri.lastPathSegment ?: "",
-                                pdf.uri.toFile()
-                            )
-                            viewModel.addDocument(pdf.uri)
-                        }
-                    }
-                    navController.navigateUp()
-                })
-
+    fun BottomNavigationBar(
+        selectedItem: Int,
+        onFilesClick: () -> Unit,
+        onScanDocClick: () -> Unit,
+        onSettingClick: () -> Unit
+    ) {
         BottomAppBar(content = {
             Row(
                 modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 IconButton(
-                    onClick = {
-                        if (selectedItem.intValue != 1) navController.navigateUp()
-                        selectedItem.intValue = 1
-                    }, colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (selectedItem.intValue == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    onClick = onFilesClick, colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = if (selectedItem == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                 ) {
                     Icon(
@@ -188,10 +208,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 Button(
-                    onClick = {
-                        selectedItem.intValue = 1
-                        scanDoc(this@MainActivity, scannerLauncher)
-                    },
+                    onClick = onScanDocClick,
                     shape = RoundedCornerShape(8.dp),
                 ) {
                     Row(
@@ -208,15 +225,11 @@ class MainActivity : ComponentActivity() {
                             text = "SCAN"
                         )
                     }
-
                 }
 
                 IconButton(
-                    onClick = {
-                        if (selectedItem.intValue != 2) navController.navigate(SettingScreen)
-                        selectedItem.intValue = 2
-                    }, colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (selectedItem.intValue == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    onClick = onSettingClick, colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = if (selectedItem == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                 ) {
                     Icon(

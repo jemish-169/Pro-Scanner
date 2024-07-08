@@ -30,7 +30,7 @@ fun checkAndCreateInternalDirectory(context: Activity): File {
     return projDir
 }
 
-fun saveFileInDirectory(directory: File, fileName: String, fileContent: File) {
+fun saveFileInDirectory(directory: File, fileName: String, fileContent: File) : Uri {
     val file = File(directory, fileName)
     try {
         FileInputStream(fileContent).use { inputStream ->
@@ -45,6 +45,7 @@ fun saveFileInDirectory(directory: File, fileName: String, fileContent: File) {
     } catch (e: IOException) {
         e.printStackTrace()
     }
+    return file.toUri()
 }
 
 fun getListFiles(parentDir: String): List<Uri> {

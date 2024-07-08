@@ -21,7 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.scanner.util.OnBoardingPage
-import com.app.scanner.util.Preferences
+import com.app.scanner.viewModel.MainViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.HorizontalPagerIndicator
@@ -32,6 +32,7 @@ import com.google.accompanist.pager.rememberPagerState
 @ExperimentalAnimationApi
 @Composable
 fun WelcomeScreen(
+    viewModel: MainViewModel,
     onFinish: () -> Unit,
 ) {
     val pages = listOf(
@@ -60,7 +61,7 @@ fun WelcomeScreen(
             modifier = Modifier.weight(1f), pagerState = pagerState
         ) {
             onFinish()
-            Preferences.setOnboarded(isOnboarded = true)
+            viewModel.setOnboarded(true)
         }
     }
 }

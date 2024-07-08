@@ -10,19 +10,32 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.scanner.R
+import com.app.scanner.viewModel.MainViewModel
 
 @Composable
-fun SettingScreen(innerPadding: PaddingValues, versionName: String) {
+fun SettingScreen(viewModel: MainViewModel, innerPadding: PaddingValues, versionName: String) {
+
+    var isSwipeToDeleteEnable by remember { mutableStateOf(viewModel.getIsSwipeToDeleteEnable()) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -42,35 +55,48 @@ fun SettingScreen(innerPadding: PaddingValues, versionName: String) {
                 color = MaterialTheme.colorScheme.primary,
             )
         }
-        SettingsItem(
+        SettingSwitchItem(icon = Icons.Default.Delete,
+            title = "Swipe Pdf item to delete",
+            isChecked = isSwipeToDeleteEnable,
+            onCheckedChange = {
+                isSwipeToDeleteEnable = !isSwipeToDeleteEnable
+                viewModel.setIsSwipeToDeleteEnable(isSwipeToDeleteEnable)
+            })
+
+        HorizontalDivider(thickness = 1.dp)
+
+        Text(
+            text = "App information",
+            fontSize = 22.sp,
+            modifier = Modifier.padding(horizontal = 4.dp)
+                .padding(top = 24.dp, bottom = 8.dp)
+        )
+
+        AppInformationItem(
             icon = R.drawable.share_24,
             title = "Share Pro scanner app",
             subtitle = "Share app with others and make their life easy"
         )
-        SettingsItem(
-            icon = R.drawable.star_24,
-            title = "Rate this App",
-            subtitle = "Rate app on play store"
+        AppInformationItem(
+            icon = R.drawable.star_24, title = "Rate this App", subtitle = "Rate app on play store"
         )
-        SettingsItem(
+        AppInformationItem(
             icon = R.drawable.rounded_lock_24,
             title = "Privacy Policy",
             subtitle = "Read this app's privacy policy"
         )
-        SettingsItem(
-            icon = R.drawable.round_commit_24,
-            title = "Version Number",
-            subtitle = versionName
+        AppInformationItem(
+            icon = R.drawable.round_commit_24, title = "Version Number", subtitle = versionName
         )
     }
 }
 
 @Composable
-fun SettingsItem(icon: Int, title: String, subtitle: String) {
+fun AppInformationItem(icon: Int, title: String, subtitle: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -81,7 +107,31 @@ fun SettingsItem(icon: Int, title: String, subtitle: String) {
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(text = title, fontSize = 18.sp)
-            Text(text = subtitle, fontSize = 14.sp)
+            Text(text = subtitle, fontSize = 14.sp, style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+@Composable
+fun SettingSwitchItem(
+    icon: ImageVector, title: String, isChecked: Boolean, onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp)
+            .padding(bottom = 8.dp)
+    ) {
+        Icon(
+            imageVector = icon, contentDescription = null, modifier = Modifier.padding(end = 16.dp)
+        )
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+        )
+        Switch(
+            checked = isChecked, onCheckedChange = onCheckedChange
+        )
     }
 }

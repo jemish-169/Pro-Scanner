@@ -3,6 +3,7 @@ package com.app.scanner.util
 import android.content.Context
 import android.content.SharedPreferences
 import com.app.scanner.util.Constants.Companion.IS_ONBOARDED
+import com.app.scanner.util.Constants.Companion.IS_SWIPE_TO_DELETE_ENABLE
 import com.app.scanner.util.Constants.Companion.PERMISSION_SHOWED
 
 class Preferences {
@@ -30,6 +31,14 @@ class Preferences {
 
         fun setPermissionShowed(permissionShowed: Long) {
             appPref.edit().putLong(PERMISSION_SHOWED, permissionShowed).apply()
+        }
+
+        fun setIsSwipeToDeleteEnable(isSwipeToDeleteEnable: Boolean) {
+            appPref.edit().putBoolean(IS_SWIPE_TO_DELETE_ENABLE, isSwipeToDeleteEnable).apply()
+        }
+
+        fun getIsSwipeToDeleteEnable(): Boolean {
+            return appPref.getBoolean(IS_SWIPE_TO_DELETE_ENABLE, false)
         }
     }
 }

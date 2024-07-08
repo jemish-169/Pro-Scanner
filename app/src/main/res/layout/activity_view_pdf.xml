@@ -10,7 +10,7 @@
     <androidx.cardview.widget.CardView
         android:id="@+id/cv_top_bar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="64dp"
         android:background="@color/surface"
         app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -19,6 +19,8 @@
 
         <LinearLayout
             android:layout_width="match_parent"
+            android:paddingHorizontal="4dp"
+            android:paddingTop="4dp"
             android:layout_height="match_parent"
             android:orientation="horizontal">
 

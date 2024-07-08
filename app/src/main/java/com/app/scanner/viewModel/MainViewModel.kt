@@ -6,6 +6,7 @@ import androidx.core.net.toFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.scanner.repository.Repository
+import com.app.scanner.util.Preferences
 import com.app.scanner.util.deleteGivenFiles
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,12 +33,29 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         }
     }
 
-    fun deleteSelectedFiles(context: Activity, fileList: List<Uri>) {
-        deleteGivenFiles(context, fileList)
+    fun deleteSelectedFiles(context: Activity, fileList: List<Uri>): Boolean {
+        val notDeletedFiles = deleteGivenFiles(context, fileList)
         _documentList.update { currentList ->
             currentList.filter { uri ->
                 uri.toFile().exists()
             }
         }
+        return notDeletedFiles.isEmpty()
+    }
+
+    fun setOnboarded(isOnboarded: Boolean) {
+        Preferences.setOnboarded(isOnboarded = isOnboarded)
+    }
+
+    fun getOnboarded(): Boolean {
+        return Preferences.getOnboarded()
+    }
+
+    fun setIsSwipeToDeleteEnable(isSwipeToDeleteEnable: Boolean) {
+        Preferences.setIsSwipeToDeleteEnable(isSwipeToDeleteEnable = isSwipeToDeleteEnable)
+    }
+
+    fun getIsSwipeToDeleteEnable(): Boolean {
+        return Preferences.getIsSwipeToDeleteEnable()
     }
 }

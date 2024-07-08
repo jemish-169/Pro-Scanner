@@ -1,5 +1,6 @@
 package com.app.scanner.ui.component
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
@@ -29,18 +30,19 @@ import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun <T> SwipeToDeleteContainer(
-    item: T,
-    onDelete: (T) -> Unit,
+fun SwipeToDeleteContainer(
+    isSwipeToDeleteEnable: Boolean,
+    item: Uri,
+    onDelete: (Uri) -> Unit,
     animationDuration: Int = 500,
-    content: @Composable (T) -> Unit
+    content: @Composable (Uri) -> Unit,
 ) {
     var isRemoved by remember {
         mutableStateOf(false)
     }
     val state = rememberDismissState(
         confirmStateChange = { value ->
-            if (value == DismissValue.DismissedToStart) {
+            if (isSwipeToDeleteEnable && value == DismissValue.DismissedToStart) {
                 isRemoved = true
                 true
             } else {
@@ -69,7 +71,7 @@ fun <T> SwipeToDeleteContainer(
                 DeleteBackground()
             },
             dismissContent = { content(item) },
-            directions = setOf(DismissDirection.EndToStart)
+            directions = if (isSwipeToDeleteEnable) setOf(DismissDirection.EndToStart) else setOf()
         )
     }
 }

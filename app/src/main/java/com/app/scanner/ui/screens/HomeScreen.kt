@@ -72,6 +72,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -82,6 +83,7 @@ import com.app.scanner.activity.ViewPdfActivity
 import com.app.scanner.ui.component.CircleCheckbox
 import com.app.scanner.ui.component.CustomDialog
 import com.app.scanner.ui.component.DialogContent
+import com.app.scanner.ui.component.SwipeToDeleteContainer
 import com.app.scanner.util.pdfToBitmap
 import com.app.scanner.util.shareSelectedFiles
 import com.app.scanner.viewModel.MainViewModel
@@ -96,7 +98,11 @@ private const val storagePermissionCode = 1001
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: MainViewModel, context: Activity, innerPadding: PaddingValues, isShowDialog: Int
+    viewModel: MainViewModel,
+    context: Activity,
+    innerPadding: PaddingValues,
+    isShowDialog: Int,
+    isSwipeToDeleteEnable: Boolean
 ) {
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
     val docs by viewModel.documentList.collectAsState()
@@ -143,7 +149,16 @@ fun HomeScreen(
                 },
                 onPositiveClick = {
                     showDialog = 0
-                    viewModel.deleteSelectedFiles(context, selectedItems.value.toList())
+                    if (viewModel.deleteSelectedFiles(
+                            context,
+                            selectedItems.value.toList()
+                        )
+                    ) Toast.makeText(
+                        context,
+                        "${if (selectedItems.value.size == 1) "File" else "Files"} deleted",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    else Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                     selectedItems.value = emptySet()
                 })
         }
@@ -316,46 +331,60 @@ fun HomeScreen(
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(
-                    key = { it },
-                    items = docs.filter { uri ->
-                        uri.lastPathSegment?.contains(searchText.text) ?: false
-                    }) {
-                    ItemPdf(
-                        context = context,
-                        uri = it,
-                        onItemClick = {
-                            if (selectedItems.value.isNotEmpty()) {
-                                val newSelection = selectedItems.value.toMutableSet()
-                                if (newSelection.contains(it)) {
-                                    newSelection.remove(it)
-                                } else {
-                                    newSelection.add(it)
-                                }
-                                selectedItems.value = newSelection
-                            } else {
-                                val intent = Intent(context, ViewPdfActivity::class.java)
-                                intent.putExtra("SelectedFile", it.toString())
-                                intent.putExtra("SelectedFileName", it.toFile().name.toString())
-                                context.startActivity(intent)
-                            }
+                items(key = { it }, items = docs.filter { uri ->
+                    uri.toFile().name.contains(searchText.text)
+                }) {
+                    SwipeToDeleteContainer(
+                        isSwipeToDeleteEnable = isSwipeToDeleteEnable,
+                        item = it,
+                        content = {
+                            ItemPdf(
+                                context = context,
+                                uri = it,
+                                onItemClick = {
+                                    if (selectedItems.value.isNotEmpty()) {
+                                        val newSelection = selectedItems.value.toMutableSet()
+                                        if (newSelection.contains(it)) {
+                                            newSelection.remove(it)
+                                        } else {
+                                            newSelection.add(it)
+                                        }
+                                        selectedItems.value = newSelection
+                                    } else {
+                                        val intent = Intent(context, ViewPdfActivity::class.java)
+                                        intent.putExtra("SelectedFile", it.toString())
+                                        intent.putExtra(
+                                            "SelectedFileName", it.toFile().name.toString()
+                                        )
+                                        context.startActivity(intent)
+                                    }
+                                },
+                                onItemLongClick = {
+                                    if (selectedItems.value.isEmpty()) {
+                                        selectedItems.value = setOf(it)
+                                    } else {
+                                        val newSelection = selectedItems.value.toMutableSet()
+                                        if (newSelection.contains(it)) {
+                                            newSelection.remove(it)
+                                        } else {
+                                            newSelection.add(it)
+                                        }
+                                        selectedItems.value = newSelection
+                                    }
+                                },
+                                isSelected = selectedItems.value.contains(it),
+                                isInSelectionMode = selectedItems.value.isNotEmpty()
+                            )
                         },
-                        onItemLongClick = {
-                            if (selectedItems.value.isEmpty()) {
-                                selectedItems.value = setOf(it)
-                            } else {
-                                val newSelection = selectedItems.value.toMutableSet()
-                                if (newSelection.contains(it)) {
-                                    newSelection.remove(it)
-                                } else {
-                                    newSelection.add(it)
-                                }
-                                selectedItems.value = newSelection
-                            }
-                        },
-                        isSelected = selectedItems.value.contains(it),
-                        isInSelectionMode = selectedItems.value.isNotEmpty()
-                    )
+                        onDelete = { uri ->
+                            if (viewModel.deleteSelectedFiles(context, listOf(uri))) Toast.makeText(
+                                context,
+                                "File deleted",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            else Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT)
+                                .show()
+                        })
                 }
             }
         }
@@ -414,9 +443,13 @@ fun ItemPdf(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(28.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = file.name, maxLines = 1)
+                    Text(
+                        text = file.name,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                        overflow = TextOverflow.Ellipsis
+                    )
                     if (isInSelectionMode) {
                         CircleCheckbox(selected = isSelected, onChecked = { onItemClick() })
                     }
