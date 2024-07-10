@@ -5,7 +5,9 @@ import android.net.Uri
 import com.app.scanner.util.checkAndCreateDirectory
 import com.app.scanner.util.checkAndCreateInternalDirectory
 import com.app.scanner.util.getListFiles
+import javax.inject.Singleton
 
+@Singleton
 class Repository(private val context: Activity) {
 
     private val _docList = mutableListOf<Uri>()

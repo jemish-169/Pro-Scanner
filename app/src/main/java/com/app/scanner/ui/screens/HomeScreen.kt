@@ -137,7 +137,7 @@ fun HomeScreen(
     if (showDialog == 2) {
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
             DialogContent(icon = Icons.Rounded.Delete,
-                iconTint = Color.Red,
+                iconTint = MaterialTheme.colorScheme.error,
                 iconDesc = "Delete?",
                 titleText = "Are you sure?",
                 descText = "Do you want to delete ${selectedItems.value.size} ${if (selectedItems.value.size == 1) "file?" else "files"}",
@@ -297,7 +297,7 @@ fun HomeScreen(
                         Text(text = "Search a file", maxLines = 1)
                     },
                     modifier = Modifier
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.surface)
                         .fillMaxWidth()
                         .height(88.dp)
                         .padding(vertical = 16.dp)

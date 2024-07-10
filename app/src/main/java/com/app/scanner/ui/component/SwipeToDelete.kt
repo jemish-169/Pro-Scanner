@@ -16,6 +16,7 @@ import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.rememberDismissState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
@@ -34,7 +34,7 @@ fun SwipeToDeleteContainer(
     isSwipeToDeleteEnable: Boolean,
     item: Uri,
     onDelete: (Uri) -> Unit,
-    animationDuration: Int = 500,
+    animationDuration: Int = 300,
     content: @Composable (Uri) -> Unit,
 ) {
     var isRemoved by remember {
@@ -42,7 +42,7 @@ fun SwipeToDeleteContainer(
     }
     val state = rememberDismissState(
         confirmStateChange = { value ->
-            if (isSwipeToDeleteEnable && value == DismissValue.DismissedToStart) {
+            if (value == DismissValue.DismissedToStart) {
                 isRemoved = true
                 true
             } else {
@@ -88,7 +88,7 @@ fun DeleteBackground(
         Icon(
             imageVector = Icons.Default.Delete,
             contentDescription = null,
-            tint = Color.Red
+            tint = MaterialTheme.colorScheme.error
         )
     }
 }

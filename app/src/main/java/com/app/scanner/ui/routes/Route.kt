@@ -6,7 +6,4 @@ import kotlinx.serialization.Serializable
 object HomeScreen
 
 @Serializable
-object WelcomeScreen
-
-@Serializable
 object SettingScreen

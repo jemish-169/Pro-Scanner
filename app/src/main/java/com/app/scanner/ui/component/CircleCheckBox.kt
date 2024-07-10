@@ -40,7 +40,7 @@ fun CircleCheckbox(selected: Boolean, onChecked: () -> Unit) {
             )
             .border(
                 width = 2.dp,
-                color = if (selected) MaterialTheme.colorScheme.primary else Color.Gray,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                 shape = CircleShape
             )
             .pointerInput(Unit) {
@@ -59,7 +59,7 @@ fun CircleCheckbox(selected: Boolean, onChecked: () -> Unit) {
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = "Checked",
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(16.dp)
             )
         }

@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -30,7 +31,7 @@ android {
             )
         }
     }
-    buildFeatures{
+    buildFeatures {
         viewBinding = true
     }
     compileOptions {
@@ -89,13 +90,12 @@ dependencies {
 //    implementation (libs.androidx.core.splashscreen)
 
     // Pager and Indicators - Accompanist
-    implementation (libs.accompanist.pager)
-    implementation( libs.accompanist.pager.indicators)
+    implementation(libs.accompanist.pager)
+    implementation(libs.accompanist.pager.indicators)
 
     // pdf Viewer
     implementation(libs.pdf.viewer)
 
     // viewmodel in compose
-    implementation (libs.androidx.lifecycle.viewmodel.compose)
-
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 }
