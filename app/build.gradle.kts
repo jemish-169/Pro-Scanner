@@ -86,9 +86,6 @@ dependencies {
     implementation(libs.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
 
-    // Splash API
-//    implementation (libs.androidx.core.splashscreen)
-
     // Pager and Indicators - Accompanist
     implementation(libs.accompanist.pager)
     implementation(libs.accompanist.pager.indicators)

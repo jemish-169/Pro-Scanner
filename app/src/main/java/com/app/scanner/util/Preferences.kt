@@ -2,7 +2,6 @@ package com.app.scanner.util
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.app.scanner.util.Constants.Companion.CATEGORY_LIST_ITEMS
 import com.app.scanner.util.Constants.Companion.IS_ONBOARDED
 import com.app.scanner.util.Constants.Companion.IS_SWIPE_TO_DELETE_ENABLE
 import com.app.scanner.util.Constants.Companion.PERMISSION_SHOWED
@@ -40,14 +39,6 @@ class Preferences {
 
         fun getIsSwipeToDeleteEnable(): Boolean {
             return appPref.getBoolean(IS_SWIPE_TO_DELETE_ENABLE, false)
-        }
-
-        fun setCategoryListItems(categoryItems: Set<String>) {
-            appPref.edit().putStringSet(CATEGORY_LIST_ITEMS, categoryItems).apply()
-        }
-
-        fun getCategoryListItems(): Set<String> {
-            return appPref.getStringSet(CATEGORY_LIST_ITEMS, emptySet())?.toSet() ?: emptySet()
         }
     }
 }

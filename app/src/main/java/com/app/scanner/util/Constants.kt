@@ -6,6 +6,13 @@ class Constants {
         const val IS_ONBOARDED = "isOnboarded"
         const val PERMISSION_SHOWED = "isPermissionShowed"
         const val IS_SWIPE_TO_DELETE_ENABLE = "isSwipeToDeleteEnable"
-        const val CATEGORY_LIST_ITEMS = "category_list_items"
+        val CATEGORY_LIST_ITEMS = listOf(
+            "Personal",
+            "Finance",
+            "Education",
+            "Business",
+            "Work",
+            "Other"
+        )
     }
 }

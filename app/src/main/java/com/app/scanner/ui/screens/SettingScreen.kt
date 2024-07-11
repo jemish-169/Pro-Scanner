@@ -27,7 +27,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,13 +55,15 @@ fun SettingScreen(
     viewModel: MainViewModel,
     innerPadding: PaddingValues,
     versionName: String,
+    isAllowed: Boolean
 ) {
 
     var isSwipeToDeleteEnable by remember { mutableStateOf(viewModel.getIsSwipeToDeleteEnable()) }
     val categoryList by viewModel.categoryList.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.fetchCategoriesIfNeeded()
+        if (categoryList.isEmpty())
+            viewModel.getCategories()
     }
 
     Column(
@@ -70,6 +71,7 @@ fun SettingScreen(
             .fillMaxSize()
             .padding(innerPadding)
             .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -85,54 +87,55 @@ fun SettingScreen(
             )
         }
 
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState())
-        ) {
+//        SettingDropDownItem(
+//            icon = R.drawable.ic_category,
+//            title = "Document Categories",
+//            categoryList = categoryList
+//        )
 
-            SettingDropDownItem(
-                icon = Icons.Default.Menu,
-                title = "Document Categories",
-                categoryList = categoryList
-            )
+        SettingSwitchItem(icon = Icons.Default.Delete,
+            title = "Swipe Pdf item to delete",
+            isChecked = isSwipeToDeleteEnable,
+            onCheckedChange = {
+                isSwipeToDeleteEnable = !isSwipeToDeleteEnable
+                viewModel.setIsSwipeToDeleteEnable(isSwipeToDeleteEnable)
+            })
 
-            SettingSwitchItem(icon = Icons.Default.Delete,
-                title = "Swipe Pdf item to delete",
-                isChecked = isSwipeToDeleteEnable,
-                onCheckedChange = {
-                    isSwipeToDeleteEnable = !isSwipeToDeleteEnable
-                    viewModel.setIsSwipeToDeleteEnable(isSwipeToDeleteEnable)
-                })
+        Text(
+            text = "App information",
+            fontSize = 22.sp,
+            modifier = Modifier
+                .padding(horizontal = 4.dp)
+                .padding(top = 16.dp, bottom = 8.dp)
+        )
 
-            Text(
-                text = "App information",
-                fontSize = 22.sp,
-                modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .padding(top = 16.dp, bottom = 8.dp)
-            )
+        AppInformationItem(
+            icon = R.drawable.ic_info,
+            title = "Files management in app",
+            subtitle = "We are using ${if (isAllowed) "External" else "Internal"} storage to manage files."
+        )
 
-            AppInformationItem(
-                icon = R.drawable.share_24,
-                title = "Share Pro scanner app",
-                subtitle = "Share app with others and make their life easy"
-            )
+        AppInformationItem(
+            icon = R.drawable.share_24,
+            title = "Share Pro scanner app",
+            subtitle = "Share app and make their life easy"
+        )
 
-            AppInformationItem(
-                icon = R.drawable.star_24,
-                title = "Rate this App",
-                subtitle = "Rate app on play store"
-            )
+        AppInformationItem(
+            icon = R.drawable.star_24,
+            title = "Rate this App",
+            subtitle = "Rate app on play store"
+        )
 
-            AppInformationItem(
-                icon = R.drawable.rounded_lock_24,
-                title = "Privacy Policy",
-                subtitle = "Read this app's privacy policy"
-            )
+        AppInformationItem(
+            icon = R.drawable.rounded_lock_24,
+            title = "Privacy Policy",
+            subtitle = "Read this app's privacy policy"
+        )
 
-            AppInformationItem(
-                icon = R.drawable.round_commit_24, title = "Version Number", subtitle = versionName
-            )
-        }
+        AppInformationItem(
+            icon = R.drawable.round_commit_24, title = "Version Number", subtitle = versionName
+        )
     }
 }
 
@@ -153,7 +156,6 @@ fun AppInformationItem(icon: Int, title: String, subtitle: String) {
         Column {
             Text(
                 text = title,
-                fontSize = 18.sp,
             )
             Text(
                 text = subtitle,
@@ -195,7 +197,7 @@ fun SettingSwitchItem(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingDropDownItem(
-    icon: ImageVector, title: String, categoryList: List<String>
+    icon: Int, title: String, categoryList: List<String>
 ) {
     var isOpened by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
@@ -216,7 +218,7 @@ fun SettingDropDownItem(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector = icon,
+                painter = painterResource(id = icon),
                 contentDescription = null,
                 modifier = Modifier.padding(end = 16.dp)
             )
@@ -240,9 +242,9 @@ fun SettingDropDownItem(
             visible = isOpened, enter = expandVertically(), exit = shrinkVertically()
         ) {
             FlowRow {
-                categoryList.forEach { word ->
+                categoryList.forEach { category ->
                     Text(
-                        word, modifier = Modifier
+                        category, modifier = Modifier
                             .padding(4.dp)
                             .background(
                                 color = MaterialTheme.colorScheme.secondary.copy(0.1f),

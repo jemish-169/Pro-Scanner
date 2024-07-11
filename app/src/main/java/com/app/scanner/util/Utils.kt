@@ -58,7 +58,7 @@ fun formatMillisToDate(millis: Long): String {
 fun getTodayDate(): String {
     val currentTime = Calendar.getInstance().timeInMillis
     val sdf = SimpleDateFormat("dd_MM_", Locale.getDefault())
-    return sdf.format(currentTime) + currentTime.toString().drop(5)
+    return sdf.format(currentTime) + currentTime.toString().drop(7)
 }
 
 fun showPermissionDialogFrequency(context: Activity): Boolean {

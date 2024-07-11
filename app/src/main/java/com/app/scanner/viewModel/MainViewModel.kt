@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.scanner.repository.Repository
+import com.app.scanner.util.Constants
 import com.app.scanner.util.Preferences
 import com.app.scanner.util.deleteGivenFiles
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,13 +21,16 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     val categoryList: StateFlow<List<String>> = _categoryList.asStateFlow()
 
     private var isDataFetched = false
-    private var isCategoryFetched = false
 
     fun addDocument(document: Uri) {
         _documentList.value += document
     }
 
-    fun fetchDataIfNeeded() {
+    fun removeDocument(document: Uri) {
+        _documentList.value -= document
+    }
+
+    fun getFilesIfNeeded() {
         viewModelScope.launch {
             if (!isDataFetched) {
                 _documentList.value = repository.fetchData()
@@ -35,12 +39,9 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
         }
     }
 
-    fun fetchCategoriesIfNeeded() {
+    fun getCategories() {
         viewModelScope.launch {
-            if (!isCategoryFetched) {
-                _categoryList.value = Preferences.getCategoryListItems().toList()
-                isCategoryFetched = true
-            }
+            _categoryList.value = Constants.CATEGORY_LIST_ITEMS
         }
     }
 
@@ -52,16 +53,6 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
 
     fun setOnboarded(isOnboarded: Boolean) {
         Preferences.setOnboarded(isOnboarded = isOnboarded)
-        Preferences.setCategoryListItems(
-            setOf(
-                "Personal Docs",
-                "Finance",
-                "Education",
-                "Business",
-                "Work",
-                "Other"
-            )
-        )
     }
 
     fun getOnboarded(): Boolean {

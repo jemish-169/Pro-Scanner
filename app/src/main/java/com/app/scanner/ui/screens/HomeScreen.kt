@@ -13,6 +13,8 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -33,11 +35,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.rounded.Delete
@@ -102,17 +106,18 @@ fun HomeScreen(
     context: Activity,
     innerPadding: PaddingValues,
     isShowDialog: Int,
-    isSwipeToDeleteEnable: Boolean
+    isSwipeToDeleteEnable: Boolean,
+    onEditClick: (Uri) -> Unit
 ) {
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
-    val docs by viewModel.documentList.collectAsState()
+    val documentList by viewModel.documentList.collectAsState()
     var showDialog by remember { mutableIntStateOf(isShowDialog) }
     var isSearchVisible by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val selectedItems = remember { mutableStateOf(setOf<Uri>()) }
 
     LaunchedEffect(Unit) {
-        viewModel.fetchDataIfNeeded()
+        if (documentList.isEmpty()) viewModel.getFilesIfNeeded()
     }
     LaunchedEffect(isSearchVisible) {
         if (isSearchVisible) focusRequester.requestFocus()
@@ -121,7 +126,7 @@ fun HomeScreen(
     if (showDialog == 1) {
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
             DialogContent(icon = Icons.Rounded.Warning,
-                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                iconTint = MaterialTheme.colorScheme.onSurface,
                 iconDesc = "Warning",
                 titleText = "Need Permission!",
                 descText = "Pro scanner requires permission to manage PDF files.",
@@ -133,8 +138,7 @@ fun HomeScreen(
                     askPermission(context)
                 })
         }
-    }
-    if (showDialog == 2) {
+    } else if (showDialog == 2) {
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
             DialogContent(icon = Icons.Rounded.Delete,
                 iconTint = MaterialTheme.colorScheme.error,
@@ -150,8 +154,7 @@ fun HomeScreen(
                 onPositiveClick = {
                     showDialog = 0
                     if (viewModel.deleteSelectedFiles(
-                            context,
-                            selectedItems.value.toList()
+                            context, selectedItems.value.toList()
                         )
                     ) Toast.makeText(
                         context,
@@ -183,7 +186,6 @@ fun HomeScreen(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         IconButton(
                             onClick = {
@@ -198,11 +200,35 @@ fun HomeScreen(
                             )
                         }
                         Text(
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             text = "${selectedItems.value.size} ${if (selectedItems.value.size == 1) "file" else "files"} selected",
                             fontSize = 20.sp,
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AnimatedVisibility(
+                            visible = selectedItems.value.size == 1,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            IconButton(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                                onClick = {
+                                    onEditClick(selectedItems.value.first())
+                                    selectedItems.value = emptySet()
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    modifier = Modifier.size(28.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    contentDescription = "Edit icon",
+                                )
+                            }
+                        }
                         IconButton(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
@@ -310,7 +336,7 @@ fun HomeScreen(
                 )
             }
         }
-        if (docs.isEmpty()) {
+        if (documentList.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -331,17 +357,16 @@ fun HomeScreen(
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(key = { it }, items = docs.filter { uri ->
+                items(key = { it }, items = documentList.filter { uri ->
                     uri.toFile().name.contains(searchText.text)
                 }) {
-                    SwipeToDeleteContainer(
-                        isSwipeToDeleteEnable = isSwipeToDeleteEnable,
+                    SwipeToDeleteContainer(isSwipeToDeleteEnable = isSwipeToDeleteEnable,
                         item = it,
                         content = {
                             ItemPdf(
                                 context = context,
                                 uri = it,
-                                onItemClick = {
+                                onItemClick = { fileName ->
                                     if (selectedItems.value.isNotEmpty()) {
                                         val newSelection = selectedItems.value.toMutableSet()
                                         if (newSelection.contains(it)) {
@@ -354,7 +379,7 @@ fun HomeScreen(
                                         val intent = Intent(context, ViewPdfActivity::class.java)
                                         intent.putExtra("SelectedFile", it.toString())
                                         intent.putExtra(
-                                            "SelectedFileName", it.toFile().name.toString()
+                                            "SelectedFileName", fileName
                                         )
                                         context.startActivity(intent)
                                     }
@@ -378,9 +403,7 @@ fun HomeScreen(
                         },
                         onDelete = { uri ->
                             if (viewModel.deleteSelectedFiles(context, listOf(uri))) Toast.makeText(
-                                context,
-                                "File deleted",
-                                Toast.LENGTH_SHORT
+                                context, "File deleted", Toast.LENGTH_SHORT
                             ).show()
                             else Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT)
                                 .show()
@@ -396,7 +419,7 @@ fun HomeScreen(
 fun ItemPdf(
     context: Activity,
     uri: Uri,
-    onItemClick: () -> Unit,
+    onItemClick: (String) -> Unit,
     onItemLongClick: () -> Unit,
     isSelected: Boolean,
     isInSelectionMode: Boolean,
@@ -409,63 +432,73 @@ fun ItemPdf(
             containerColor = MaterialTheme.colorScheme.surface,
             disabledContainerColor = MaterialTheme.colorScheme.secondary,
             disabledContentColor = MaterialTheme.colorScheme.onSecondary
-        ), modifier = Modifier
+        ),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .border(
-                BorderStroke(0.8.dp, color = MaterialTheme.colorScheme.secondary),
-                shape = RoundedCornerShape(8.dp)
-            )
             .combinedClickable(
-                onClick = onItemClick, onLongClick = onItemLongClick
+                onClick = { onItemClick(file.name.toString()) }, onLongClick = onItemLongClick
             )
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 8.dp, start = 8.dp, end = 8.dp),
+            modifier = Modifier.padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
                 bitmap = image.first,
                 contentScale = ContentScale.Crop,
                 contentDescription = null,
                 modifier = Modifier
-                    .height(90.dp)
+                    .height(64.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .width(65.dp)
+                    .width(36.dp)
             )
-            Column(
-                modifier = Modifier.padding(8.dp)
-            ) {
+            Column {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(28.dp),
+                        .height(28.dp)
                 ) {
                     Text(
                         text = file.name,
                         maxLines = 1,
                         modifier = Modifier.weight(1f),
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface
+
                     )
                     if (isInSelectionMode) {
-                        CircleCheckbox(selected = isSelected, onChecked = { onItemClick() })
+                        CircleCheckbox(selected = isSelected,
+                            onChecked = { onItemClick(file.name.toString()) })
                     }
                 }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(60.dp)
+                    horizontalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     Text(
                         text = image.third,
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.secondaryContainer
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
                     )
                     Text(
                         text = image.second.toString() + " Pages",
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.secondaryContainer
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
+                    )
+                    Text(
+                        text = "category",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f),
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .border(
+                                BorderStroke(
+                                    width = 0.7.dp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                ), CircleShape
+                            )
+                            .padding(horizontal = 8.dp)
                     )
                 }
             }

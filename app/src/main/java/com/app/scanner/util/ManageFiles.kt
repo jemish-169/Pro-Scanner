@@ -30,8 +30,8 @@ fun checkAndCreateInternalDirectory(context: Activity): File {
     return projDir
 }
 
-fun saveFileInDirectory(directory: File, fileName: String, fileContent: File) : Uri {
-    val file = File(directory, fileName)
+fun saveFileInDirectory(directory: File, fileName: String, fileContent: File): Uri {
+    val file = File(directory, "$fileName.pdf")
     try {
         FileInputStream(fileContent).use { inputStream ->
             FileOutputStream(file).use { outputStream ->
@@ -46,6 +46,12 @@ fun saveFileInDirectory(directory: File, fileName: String, fileContent: File) : 
         e.printStackTrace()
     }
     return file.toUri()
+}
+
+fun renameFileInDirectory(directory: File, fileName: String, fileContent: File): Uri {
+    val to = File(directory, fileName)
+    if (directory.exists() && fileContent.exists()) fileContent.renameTo(to)
+    return to.toUri()
 }
 
 fun getListFiles(parentDir: String): List<Uri> {

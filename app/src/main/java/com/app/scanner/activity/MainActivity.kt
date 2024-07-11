@@ -1,5 +1,6 @@
 package com.app.scanner.activity
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -25,6 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +40,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toFile
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
@@ -44,6 +48,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.app.scanner.R
 import com.app.scanner.repository.Repository
+import com.app.scanner.ui.component.CustomDialog
+import com.app.scanner.ui.component.InputContent
 import com.app.scanner.ui.routes.HomeScreen
 import com.app.scanner.ui.routes.SettingScreen
 import com.app.scanner.ui.screens.HomeScreen
@@ -57,6 +63,7 @@ import com.app.scanner.util.checkAndCreateInternalDirectory
 import com.app.scanner.util.checkPermission
 import com.app.scanner.util.getTodayDate
 import com.app.scanner.util.getVersionName
+import com.app.scanner.util.renameFileInDirectory
 import com.app.scanner.util.saveFileInDirectory
 import com.app.scanner.util.showPermissionDialogFrequency
 import com.app.scanner.viewModel.MainViewModel
@@ -66,6 +73,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var repository: Repository
     private lateinit var viewModel: MainViewModel
+    private var isAllowed = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,8 +87,6 @@ class MainActivity : ComponentActivity() {
 
         Preferences.getInstance(applicationContext)
 
-//        installSplashScreen()
-
         setContent {
             AppTheme {
                 MainScreen()
@@ -88,12 +94,52 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        isAllowed = checkPermission(this)
+    }
+
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
     fun MainScreen() {
+        val categoryList by viewModel.categoryList.collectAsState()
+        var recentSavedFileUri by remember { mutableStateOf("".toUri()) }
         val navController = rememberNavController()
         var isOnboarded by remember { mutableStateOf(viewModel.getOnboarded()) }
         val selectedItem = remember { mutableIntStateOf(1) }
+        var showDialog by remember { mutableIntStateOf(0) }
+
+        LaunchedEffect(Unit) {
+            viewModel.getCategories()
+        }
+
+        if (showDialog == 1) {
+            CustomDialog(onDismissRequest = {}) {
+                InputContent(
+                    categoryList = categoryList,
+                    oldFileName = "Pro scanner ${getTodayDate()}",
+                    onNegativeClick = { fileName ->
+                        showDialog = 0
+                        saveFile(fileName, recentSavedFileUri, isAllowed)
+                    },
+                    onPositiveClick = { fileName ->
+                        showDialog = 0
+                        saveFile(fileName, recentSavedFileUri, isAllowed)
+                    })
+            }
+        } else if (showDialog == 2) {
+            CustomDialog(onDismissRequest = {}) {
+                InputContent(
+                    categoryList = categoryList,
+                    oldFileName = recentSavedFileUri.toFile().name,
+                    onNegativeClick = { showDialog = 0 },
+                    onPositiveClick = { fileName ->
+                        showDialog = 0
+                        renameFile(fileName, recentSavedFileUri, isAllowed)
+                    })
+            }
+        }
+
         val scannerLauncher =
             rememberLauncherForActivityResult(contract = ActivityResultContracts.StartIntentSenderForResult(),
                 onResult = {
@@ -101,25 +147,10 @@ class MainActivity : ComponentActivity() {
                         val scanningResult =
                             GmsDocumentScanningResult.fromActivityResultIntent(it.data)
                         scanningResult?.pdf?.let { pdf ->
-
-                            if (checkPermission(this@MainActivity)) {
-                                val file = saveFileInDirectory(
-                                    checkAndCreateDirectory(),
-                                    "Pro Scanner " + getTodayDate(),
-                                    pdf.uri.toFile()
-                                )
-                                viewModel.addDocument(file)
-                            } else {
-                                val file = saveFileInDirectory(
-                                    checkAndCreateInternalDirectory(this@MainActivity),
-                                    "Pro Scanner " + getTodayDate(),
-                                    pdf.uri.toFile()
-                                )
-                                viewModel.addDocument(file)
-                            }
+                            recentSavedFileUri = pdf.uri
+                            showDialog = 1
                         }
                     }
-                    navController.navigateUp()
                 })
         if (!isOnboarded) {
             WelcomeScreen(viewModel = viewModel, onFinish = { isOnboarded = true })
@@ -172,7 +203,11 @@ class MainActivity : ComponentActivity() {
                             context = this@MainActivity,
                             innerPadding,
                             if (showPermissionDialogFrequency(context = this@MainActivity)) 1 else 0,
-                            viewModel.getIsSwipeToDeleteEnable()
+                            viewModel.getIsSwipeToDeleteEnable(),
+                            onEditClick = {
+                                showDialog = 2
+                                recentSavedFileUri = it
+                            }
                         )
                     }
                     composable<SettingScreen>(
@@ -205,11 +240,47 @@ class MainActivity : ComponentActivity() {
                             viewModel,
                             innerPadding,
                             getVersionName(this@MainActivity),
+                            isAllowed
                         )
                     }
                 }
             }
         }
+    }
+
+    private fun renameFile(newFileName: String, uri: Uri, isAllowed: Boolean) {
+        viewModel.removeDocument(uri)
+        val file = if (isAllowed) {
+            renameFileInDirectory(
+                checkAndCreateDirectory(),
+                newFileName,
+                uri.toFile()
+            )
+        } else {
+            renameFileInDirectory(
+                checkAndCreateInternalDirectory(this@MainActivity),
+                newFileName,
+                uri.toFile()
+            )
+        }
+        viewModel.addDocument(file)
+    }
+
+    private fun saveFile(fileName: String, uri: Uri, isAllowed: Boolean) {
+        val file = if (isAllowed) {
+            saveFileInDirectory(
+                checkAndCreateDirectory(),
+                fileName,
+                uri.toFile()
+            )
+        } else {
+            saveFileInDirectory(
+                checkAndCreateInternalDirectory(this@MainActivity),
+                fileName,
+                uri.toFile()
+            )
+        }
+        viewModel.addDocument(file)
     }
 
     @Composable
