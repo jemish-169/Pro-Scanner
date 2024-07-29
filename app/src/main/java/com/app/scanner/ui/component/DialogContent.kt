@@ -33,13 +33,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
 fun DialogContent(
-    icon: ImageVector,
+    icon: Int,
     iconTint : Color,
     iconDesc: String,
     descText: String,
@@ -73,7 +73,7 @@ fun DialogContent(
                         .background(MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     Icon(
-                        imageVector = icon,
+                        painter = painterResource(id = icon),
                         contentDescription = iconDesc,
                         tint = iconTint,
                         modifier = Modifier

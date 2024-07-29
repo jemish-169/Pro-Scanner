@@ -31,7 +31,7 @@
                 android:contentDescription="@string/back_icon"
                 android:foreground="?attr/selectableItemBackground"
                 android:padding="10dp"
-                android:src="@drawable/ic_arrow_back" />
+                android:src="@drawable/arrow_back" />
 
             <TextView
                 android:id="@+id/file_name"

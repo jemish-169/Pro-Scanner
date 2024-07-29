@@ -95,4 +95,7 @@ dependencies {
 
     // viewmodel in compose
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // data - store in android
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
 }

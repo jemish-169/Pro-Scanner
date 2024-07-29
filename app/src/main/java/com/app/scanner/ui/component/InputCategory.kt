@@ -6,13 +6,9 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,13 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -51,19 +45,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.scanner.R
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InputContent(
-    categoryList: List<String>,
-    oldFileName: String,
-    onNegativeClick: (String) -> Unit,
+fun InputCategory(
+    onNegativeClick: () -> Unit,
     onPositiveClick: (String) -> Unit
 ) {
     var graphicVisible by remember { mutableStateOf(false) }
-    var fileName by remember { mutableStateOf(TextFieldValue(oldFileName)) }
-    var selectedCategory by remember { mutableStateOf("Other") }
+    var categoryName by remember { mutableStateOf(TextFieldValue("")) }
 
-    LaunchedEffect(Unit) { graphicVisible = true }
+    LaunchedEffect(Unit) {
+        graphicVisible = true
+    }
 
     Column(
         modifier = Modifier
@@ -88,8 +80,8 @@ fun InputContent(
                         .background(MaterialTheme.colorScheme.primaryContainer)
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_file),
-                        contentDescription = "File",
+                        painter = painterResource(id = R.drawable.add),
+                        contentDescription = "Add category",
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .size(32.dp)
@@ -97,40 +89,33 @@ fun InputContent(
                     )
                 }
                 Text(
-                    "Rename your file", style = MaterialTheme.typography.bodyLarge, fontSize = 24.sp
+                    "Add category name",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontSize = 24.sp
                 )
                 OutlinedTextField(
-                    value = fileName,
-                    onValueChange = { fileName = it },
+                    shape = RoundedCornerShape(8.dp),
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.surface)
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
                     label = {
-                        Text(text = "File name", maxLines = 1)
+                        Text(text = "Category", maxLines = 1)
                     },
                     placeholder = {
-                        Text(text = "Name a file", maxLines = 1)
+                        Text(text = "Add category", maxLines = 1)
                     },
-                    isError = fileName.text.isEmpty(),
                     singleLine = true,
                     maxLines = 1,
                     keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Characters,
-                        autoCorrectEnabled = false,
+                        capitalization = KeyboardCapitalization.Unspecified,
+                        autoCorrectEnabled = true,
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Done
-                    ),
-                    shape = RoundedCornerShape(8.dp),
+                    )
                 )
-
-//                Text(text = "Select Category for your file")
-//                Spacer(modifier = Modifier.height(8.dp))
-//                ChipGroup(
-//                    categoryList = categoryList,
-//                    selectedCategory = selectedCategory,
-//                    onCategorySelected = { selectedCategory = it }
-//                )
             }
         }
         Row(
@@ -141,8 +126,7 @@ fun InputContent(
         ) {
             TextButton(
                 onClick = {
-                    if (fileName.text.isNotEmpty())
-                        onNegativeClick(fileName.text)
+                    onNegativeClick()
                 },
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             ) {
@@ -162,51 +146,15 @@ fun InputContent(
                 ),
                 elevation = ButtonDefaults.buttonElevation(4.dp),
                 onClick = {
-                    if (fileName.text.isNotEmpty())
-                        onPositiveClick(fileName.text)
+                    if (categoryName.text.isNotEmpty())
+                        onPositiveClick(categoryName.text)
                 }) {
                 Text(
-                    "Done",
+                    "Save",
                     color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun ChipGroup(
-    categoryList: List<String>,
-    selectedCategory: String,
-    onCategorySelected: (String) -> Unit
-) {
-    FlowRow {
-        categoryList.forEach { category ->
-            val color = if (selectedCategory == category)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.secondary
-            Text(
-                color = color,
-                text = category,
-                modifier = Modifier
-                    .padding(4.dp)
-                    .clip(CircleShape)
-                    .background(
-                        color = color.copy(0.1f),
-                    )
-                    .border(
-                        BorderStroke(
-                            width = 1.dp,
-                            color = color
-                        ),
-                        CircleShape
-                    )
-                    .clickable { onCategorySelected(category) }
-                    .padding(vertical = 4.dp, horizontal = 10.dp)
-            )
         }
     }
 }

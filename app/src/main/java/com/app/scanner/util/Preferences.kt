@@ -2,6 +2,9 @@ package com.app.scanner.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
+import com.app.scanner.util.Constants.Companion.CATEGORY_LIST_ITEMS
+import com.app.scanner.util.Constants.Companion.DEFAULT_CATEGORY_LIST
 import com.app.scanner.util.Constants.Companion.IS_ONBOARDED
 import com.app.scanner.util.Constants.Companion.IS_SWIPE_TO_DELETE_ENABLE
 import com.app.scanner.util.Constants.Companion.PERMISSION_SHOWED
@@ -23,6 +26,19 @@ class Preferences {
 
         fun setOnboarded(isOnboarded: Boolean) {
             appPref.edit().putBoolean(IS_ONBOARDED, isOnboarded).apply()
+        }
+
+        fun getCategoryList(): List<String> {
+            return appPref.getStringSet(
+                CATEGORY_LIST_ITEMS, DEFAULT_CATEGORY_LIST.toSet()
+            )?.toList().let {
+                it ?: emptyList()
+            }
+        }
+
+        fun setCategoryList(categoryList: List<String>) {
+            Log.e("TAG", "setCategoryList: ${categoryList.size}")
+            appPref.edit().putStringSet(CATEGORY_LIST_ITEMS, categoryList.toSet()).apply()
         }
 
         fun getPermissionShowed(): Long {

@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -31,7 +30,6 @@ fun CircleCheckbox(selected: Boolean, onChecked: () -> Unit) {
 
     Box(
         modifier = Modifier
-            .padding(end = 4.dp)
             .size(28.dp)
             .scale(animatedScale)
             .background(
