@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.scanner.util.Constants.Companion.DEFAULT_CATEGORY_LIST
 import com.app.scanner.util.OnBoardingPage
 import com.app.scanner.viewModel.MainViewModel
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -60,8 +61,9 @@ fun WelcomeScreen(
         FinishButton(
             modifier = Modifier.weight(1f), pagerState = pagerState
         ) {
-            onFinish()
             viewModel.setOnboarded(true)
+            viewModel.setCategoryList(DEFAULT_CATEGORY_LIST)
+            onFinish()
         }
     }
 }

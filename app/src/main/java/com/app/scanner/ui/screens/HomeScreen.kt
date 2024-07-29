@@ -1,17 +1,9 @@
 package com.app.scanner.ui.screens
 
-import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.IntentSenderRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -21,6 +13,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,20 +27,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.rounded.Delete
-import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -69,7 +60,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -77,10 +68,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.net.toFile
 import com.app.scanner.R
 import com.app.scanner.activity.ViewPdfActivity
@@ -88,16 +78,12 @@ import com.app.scanner.ui.component.CircleCheckbox
 import com.app.scanner.ui.component.CustomDialog
 import com.app.scanner.ui.component.DialogContent
 import com.app.scanner.ui.component.SwipeToDeleteContainer
+import com.app.scanner.util.Constants.Companion.ALL
+import com.app.scanner.util.askPermission
+import com.app.scanner.util.formatFileSize
 import com.app.scanner.util.pdfToBitmap
 import com.app.scanner.util.shareSelectedFiles
 import com.app.scanner.viewModel.MainViewModel
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
-import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
-import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
-
-private const val storagePermissionCode = 1001
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,25 +93,27 @@ fun HomeScreen(
     innerPadding: PaddingValues,
     isShowDialog: Int,
     isSwipeToDeleteEnable: Boolean,
-    onEditClick: (Uri) -> Unit
+    onEditClick: (Pair<Uri, String>) -> Unit,
+    duplicateFile: (Pair<Uri, String>) -> Unit,
+    askFileSaveLocation: (Uri) -> Boolean
 ) {
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
     val documentList by viewModel.documentList.collectAsState()
     var showDialog by remember { mutableIntStateOf(isShowDialog) }
     var isSearchVisible by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
-    val selectedItems = remember { mutableStateOf(setOf<Uri>()) }
+    var isSelectionMode by remember { mutableStateOf(false) }
+    var isFileDeleted = false
+    val selectedItems = remember { mutableStateOf(setOf<Pair<Uri, String>>()) }
+    val categoryList by viewModel.categoryList.collectAsState()
+    var selectedCategory by remember { mutableStateOf(ALL) }
 
-    LaunchedEffect(Unit) {
-        if (documentList.isEmpty()) viewModel.getFilesIfNeeded()
-    }
     LaunchedEffect(isSearchVisible) {
         if (isSearchVisible) focusRequester.requestFocus()
     }
-
     if (showDialog == 1) {
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
-            DialogContent(icon = Icons.Rounded.Warning,
+            DialogContent(icon = R.drawable.warning_24,
                 iconTint = MaterialTheme.colorScheme.onSurface,
                 iconDesc = "Warning",
                 titleText = "Need Permission!",
@@ -140,7 +128,7 @@ fun HomeScreen(
         }
     } else if (showDialog == 2) {
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
-            DialogContent(icon = Icons.Rounded.Delete,
+            DialogContent(icon = R.drawable.delete_24,
                 iconTint = MaterialTheme.colorScheme.error,
                 iconDesc = "Delete?",
                 titleText = "Are you sure?",
@@ -150,6 +138,8 @@ fun HomeScreen(
                 onNegativeClick = {
                     showDialog = 0
                     selectedItems.value = emptySet()
+                    isSelectionMode = false
+                    isFileDeleted = false
                 },
                 onPositiveClick = {
                     showDialog = 0
@@ -163,6 +153,8 @@ fun HomeScreen(
                     ).show()
                     else Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
                     selectedItems.value = emptySet()
+                    isSelectionMode = false
+                    isFileDeleted = true
                 })
         }
     }
@@ -174,7 +166,7 @@ fun HomeScreen(
     ) {
         Row {
             AnimatedVisibility(
-                visible = selectedItems.value.isNotEmpty(),
+                visible = isSelectionMode,
                 enter = slideInHorizontally(initialOffsetX = { -it })
             ) {
                 Row(
@@ -190,10 +182,11 @@ fun HomeScreen(
                         IconButton(
                             onClick = {
                                 selectedItems.value = emptySet()
+                                isSelectionMode = false
                             },
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                                painter = painterResource(id = R.drawable.arrow_back),
                                 modifier = Modifier.size(28.dp),
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 contentDescription = "Back icon",
@@ -219,11 +212,11 @@ fun HomeScreen(
                                 onClick = {
                                     onEditClick(selectedItems.value.first())
                                     selectedItems.value = emptySet()
+                                    isSelectionMode = false
                                 },
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    modifier = Modifier.size(28.dp),
+                                    painter = painterResource(id = R.drawable.rename),
                                     tint = MaterialTheme.colorScheme.onSurface,
                                     contentDescription = "Edit icon",
                                 )
@@ -236,11 +229,11 @@ fun HomeScreen(
                             onClick = {
                                 shareSelectedFiles(context, selectedItems.value.toList())
                                 selectedItems.value = emptySet()
+                                isSelectionMode = false
                             },
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Share,
-                                modifier = Modifier.size(28.dp),
+                                painter = painterResource(id = R.drawable.share_24),
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 contentDescription = "share icon",
                             )
@@ -252,8 +245,7 @@ fun HomeScreen(
                             onClick = { showDialog = 2 },
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Delete,
-                                modifier = Modifier.size(28.dp),
+                                painter = painterResource(id = R.drawable.delete_24),
                                 tint = MaterialTheme.colorScheme.onSurface,
                                 contentDescription = "delete icon",
                             )
@@ -313,7 +305,7 @@ fun HomeScreen(
                             searchText = TextFieldValue("")
                         }) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                painter = painterResource(id = R.drawable.arrow_back),
                                 contentDescription = "search field back arrow icon",
                             )
                         }
@@ -336,7 +328,56 @@ fun HomeScreen(
                 )
             }
         }
-        if (documentList.isEmpty()) {
+        Row(modifier = Modifier.padding(bottom = 4.dp)) {
+            val colorAll = if (selectedCategory == ALL) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.secondary
+            val bgColorAll =
+                if (selectedCategory == ALL) colorAll.copy(0.1f) else colorAll.copy(0.0f)
+            Text(color = colorAll,
+                text = ALL,
+                modifier = Modifier
+                    .padding(4.dp)
+                    .clip(CircleShape)
+                    .background(
+                        color = bgColorAll,
+                    )
+                    .border(
+                        BorderStroke(
+                            width = 1.dp, color = colorAll
+                        ), CircleShape
+                    )
+                    .clickable { selectedCategory = ALL }
+                    .padding(vertical = 4.dp, horizontal = 10.dp))
+            LazyRow {
+                items(key = { it }, items = categoryList) { category ->
+                    val color = if (selectedCategory == category) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.secondary
+                    val bgColor =
+                        if (selectedCategory == category) color.copy(0.1f) else color.copy(0.0f)
+                    Text(color = color,
+                        text = category,
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .background(
+                                color = bgColor,
+                            )
+                            .border(
+                                BorderStroke(
+                                    width = 1.dp, color = color
+                                ), CircleShape
+                            )
+                            .clickable { selectedCategory = category }
+                            .padding(vertical = 4.dp, horizontal = 10.dp))
+                }
+            }
+        }
+        val filteredList = documentList.filter { item ->
+            val nameMatches = item.first.lastPathSegment.toString().contains(searchText.text)
+            val categoryMatches = selectedCategory == ALL || item.second == selectedCategory
+            nameMatches && categoryMatches
+        }
+        if (filteredList.isEmpty()) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -357,56 +398,64 @@ fun HomeScreen(
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(key = { it }, items = documentList.filter { uri ->
-                    uri.toFile().name.contains(searchText.text)
-                }) {
-                    SwipeToDeleteContainer(isSwipeToDeleteEnable = isSwipeToDeleteEnable,
-                        item = it,
-                        content = {
+                items(key = { it.first }, items = filteredList) { item ->
+                    SwipeToDeleteContainer(isSwipeToDeleteEnable = !isSelectionMode && isSwipeToDeleteEnable,
+                        item = item,
+                        content = { contentUri ->
                             ItemPdf(
-                                context = context,
-                                uri = it,
+                                uri = contentUri,
                                 onItemClick = { fileName ->
-                                    if (selectedItems.value.isNotEmpty()) {
+                                    if (isSelectionMode) {
                                         val newSelection = selectedItems.value.toMutableSet()
-                                        if (newSelection.contains(it)) {
-                                            newSelection.remove(it)
+                                        if (newSelection.contains(item)) {
+                                            newSelection.remove(item)
                                         } else {
-                                            newSelection.add(it)
+                                            newSelection.add(item)
                                         }
                                         selectedItems.value = newSelection
+                                        isSelectionMode = newSelection.isNotEmpty()
                                     } else {
                                         val intent = Intent(context, ViewPdfActivity::class.java)
-                                        intent.putExtra("SelectedFile", it.toString())
+                                        intent.putExtra("SelectedFile", contentUri.toString())
                                         intent.putExtra(
                                             "SelectedFileName", fileName
                                         )
                                         context.startActivity(intent)
                                     }
                                 },
-                                onItemLongClick = {
-                                    if (selectedItems.value.isEmpty()) {
-                                        selectedItems.value = setOf(it)
+                                onClickSelectItem = {
+                                    if (!isSelectionMode) {
+                                        selectedItems.value = setOf(item)
+                                        isSelectionMode = true
                                     } else {
                                         val newSelection = selectedItems.value.toMutableSet()
-                                        if (newSelection.contains(it)) {
-                                            newSelection.remove(it)
+                                        if (newSelection.contains(item)) {
+                                            newSelection.remove(item)
                                         } else {
-                                            newSelection.add(it)
+                                            newSelection.add(item)
                                         }
                                         selectedItems.value = newSelection
+                                        isSelectionMode = newSelection.isNotEmpty()
                                     }
                                 },
-                                isSelected = selectedItems.value.contains(it),
-                                isInSelectionMode = selectedItems.value.isNotEmpty()
+                                onEditClick = { onEditClick(item) },
+                                isSelected = selectedItems.value.contains(item),
+                                isInSelectionMode = isSelectionMode,
+                                duplicateFile = { duplicateFile(item) },
+                                shareFile = { shareSelectedFiles(context, listOf(item)) },
+                                deleteFile = {
+                                    selectedItems.value = setOf(item)
+                                    showDialog = 2
+                                },
+                                askFileSaveLocation = {
+                                    if (!askFileSaveLocation(item.first)) showDialog = 1
+                                }
                             )
                         },
                         onDelete = { uri ->
-                            if (viewModel.deleteSelectedFiles(context, listOf(uri))) Toast.makeText(
-                                context, "File deleted", Toast.LENGTH_SHORT
-                            ).show()
-                            else Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT)
-                                .show()
+                            selectedItems.value = setOf(uri)
+                            showDialog = 2
+                            isFileDeleted
                         })
                 }
             }
@@ -417,15 +466,71 @@ fun HomeScreen(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ItemPdf(
-    context: Activity,
     uri: Uri,
     onItemClick: (String) -> Unit,
-    onItemLongClick: () -> Unit,
+    onClickSelectItem: () -> Unit,
     isSelected: Boolean,
+    onEditClick: () -> Unit,
     isInSelectionMode: Boolean,
+    duplicateFile: () -> Unit,
+    shareFile: () -> Unit,
+    deleteFile: () -> Unit,
+    askFileSaveLocation: () -> Unit
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    var anchorPositionX by remember { mutableIntStateOf(0) }
+
     val file = uri.toFile()
-    val image = pdfToBitmap(file, context = context)
+    val image = pdfToBitmap(file)
+
+    DropdownMenu(
+        expanded = isExpanded,
+        onDismissRequest = { isExpanded = false },
+        offset = DpOffset(x = anchorPositionX.dp, y = 0.dp)
+    ) {
+        DropdownMenuItem(onClick = {
+            isExpanded = false
+            onClickSelectItem()
+        }, text = {
+            DropDownItemNameAndIcon(R.drawable.check_circle_24, "Select icon", "Select")
+        })
+        DropdownMenuItem(onClick = {
+            isExpanded = false
+            onEditClick()
+        }, text = {
+            DropDownItemNameAndIcon(R.drawable.rename, "Rename icon", "Rename")
+        })
+        DropdownMenuItem(onClick = {
+            isExpanded = false
+            askFileSaveLocation()
+        }, text = {
+            DropDownItemNameAndIcon(
+                R.drawable.download_24,
+                "Save to storage icon",
+                "Save to storage"
+            )
+        })
+        DropdownMenuItem(onClick = {
+            isExpanded = false
+            duplicateFile()
+        }, text = {
+            DropDownItemNameAndIcon(R.drawable.copy_24, "Duplicate icon", "Duplicate")
+        })
+        DropdownMenuItem(onClick = {
+            isExpanded = false
+            shareFile()
+        }, text = {
+            DropDownItemNameAndIcon(R.drawable.share_24, "Share icon", "Share")
+        })
+        DropdownMenuItem(onClick = {
+            isExpanded = false
+            deleteFile()
+        }, text = {
+            DropDownItemNameAndIcon(R.drawable.delete_24, "Delete icon", "Delete")
+        })
+    }
+
     Card(
         colors = CardColors(
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -438,7 +543,7 @@ fun ItemPdf(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .combinedClickable(
-                onClick = { onItemClick(file.name.toString()) }, onLongClick = onItemLongClick
+                onClick = { onItemClick(file.name.toString()) }, onLongClick = onClickSelectItem
             )
     ) {
         Row(
@@ -446,101 +551,88 @@ fun ItemPdf(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Image(
-                bitmap = image.first,
-                contentScale = ContentScale.Crop,
+                painter = painterResource(id = R.drawable.pdf_icon),
                 contentDescription = null,
+                alpha = 0.7f,
                 modifier = Modifier
                     .height(64.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .width(36.dp)
+                    .width(48.dp)
+                    .padding(3.dp)
             )
-            Column {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .height(64.dp)
+                    .weight(1f)
+            ) {
+                Text(
+                    text = uri.lastPathSegment.toString(),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(28.dp)
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = file.name,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f),
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
-
+                        text = image.second,
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
                     )
-                    if (isInSelectionMode) {
-                        CircleCheckbox(selected = isSelected,
-                            onChecked = { onItemClick(file.name.toString()) })
-                    }
+                    Text(
+                        text = image.first.toString() + " Pages",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
+                    )
+                    Text(
+                        text = formatFileSize(file.length()),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
+                    )
                 }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    Text(
-                        text = image.third,
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
-                    )
-                    Text(
-                        text = image.second.toString() + " Pages",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f)
-                    )
-                    Text(
-                        text = "category",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(0.7f),
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .border(
-                                BorderStroke(
-                                    width = 0.7.dp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                ), CircleShape
-                            )
-                            .padding(horizontal = 8.dp)
-                    )
+            }
+            Row(
+                modifier = Modifier
+                    .height(64.dp)
+                    .width(28.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isInSelectionMode) {
+                    CircleCheckbox(
+                        selected = isSelected,
+                        onChecked = { onItemClick(file.name.toString()) })
+                } else {
+                    IconButton(modifier = Modifier.size(28.dp), onClick = {
+                        isExpanded = true
+                        anchorPositionX = with(density) { -6.dp.roundToPx() }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "MoreVertical",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-fun scanDoc(
-    context: Activity,
-    scannerLauncher: ManagedActivityResultLauncher<IntentSenderRequest, ActivityResult>
-) {
-    val options = GmsDocumentScannerOptions.Builder().setScannerMode(SCANNER_MODE_FULL)
-        .setGalleryImportAllowed(true).setResultFormats(RESULT_FORMAT_JPEG, RESULT_FORMAT_PDF)
-        .build()
-    val scanner = GmsDocumentScanning.getClient(options)
-    scanner.getStartScanIntent(context).addOnSuccessListener {
-        scannerLauncher.launch(
-            IntentSenderRequest.Builder(it).build()
+@Composable
+fun DropDownItemNameAndIcon(icon: Int, contentDesc: String, content: String) {
+    Row(
+        modifier = Modifier.padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = contentDesc,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(end = 8.dp)
         )
-    }.addOnFailureListener {
-        Toast.makeText(
-            context, "Something went wrong!", Toast.LENGTH_SHORT
-        ).show()
+        Text(
+            color = MaterialTheme.colorScheme.onSurface, text = content
+        )
     }
-}
-
-private fun askPermission(context: Activity): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        if (!Environment.isExternalStorageManager()) {
-            val uri = Uri.parse("package:${context.packageName}")
-            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri)
-            context.startActivity(intent)
-        } else return true
-    } else {
-        if (ContextCompat.checkSelfPermission(
-                context, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                context, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), storagePermissionCode
-            )
-        } else return true
-    }
-    return false
 }

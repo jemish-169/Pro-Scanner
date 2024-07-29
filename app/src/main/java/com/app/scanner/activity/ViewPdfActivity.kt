@@ -31,8 +31,11 @@ class ViewPdfActivity : AppCompatActivity() {
         binding.backIcon.setOnClickListener {
             finish()
         }
-        binding.shareIcon.setOnClickListener{
-            shareSelectedFiles(this@ViewPdfActivity, listOf(selectedFile.toUri()))
+        binding.shareIcon.setOnClickListener {
+            shareSelectedFiles(
+                this@ViewPdfActivity,
+                listOf(Pair(selectedFile.toUri(), "Pro Scanner"))
+            )
         }
     }
 }

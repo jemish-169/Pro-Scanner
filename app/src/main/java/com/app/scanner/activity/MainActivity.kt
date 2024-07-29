@@ -1,10 +1,12 @@
 package com.app.scanner.activity
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -49,22 +51,24 @@ import androidx.navigation.compose.rememberNavController
 import com.app.scanner.R
 import com.app.scanner.repository.Repository
 import com.app.scanner.ui.component.CustomDialog
-import com.app.scanner.ui.component.InputContent
+import com.app.scanner.ui.component.InputFilename
 import com.app.scanner.ui.routes.HomeScreen
 import com.app.scanner.ui.routes.SettingScreen
 import com.app.scanner.ui.screens.HomeScreen
 import com.app.scanner.ui.screens.SettingScreen
 import com.app.scanner.ui.screens.WelcomeScreen
-import com.app.scanner.ui.screens.scanDoc
 import com.app.scanner.ui.theme.AppTheme
 import com.app.scanner.util.Preferences
-import com.app.scanner.util.checkAndCreateDirectory
-import com.app.scanner.util.checkAndCreateInternalDirectory
+import com.app.scanner.util.askPermission
+import com.app.scanner.util.checkAndCreateExternalParentDir
+import com.app.scanner.util.checkAndCreateInternalParentDir
 import com.app.scanner.util.checkPermission
 import com.app.scanner.util.getTodayDate
 import com.app.scanner.util.getVersionName
-import com.app.scanner.util.renameFileInDirectory
+import com.app.scanner.util.renameAndMoveFile
 import com.app.scanner.util.saveFileInDirectory
+import com.app.scanner.util.saveFileToSelectedLocation
+import com.app.scanner.util.scanDoc
 import com.app.scanner.util.showPermissionDialogFrequency
 import com.app.scanner.viewModel.MainViewModel
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
@@ -74,22 +78,40 @@ class MainActivity : ComponentActivity() {
     private lateinit var repository: Repository
     private lateinit var viewModel: MainViewModel
     private var isAllowed = false
+    private lateinit var originalFile: Uri
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        repository = Repository(this@MainActivity)
+        repository = Repository(context = this@MainActivity)
+
         viewModel = ViewModelProvider(this, object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return MainViewModel(repository) as T
             }
         })[MainViewModel::class.java]
 
+
+        val saveFileToSelectedLocLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_OK) {
+                    result.data?.data?.also { uri ->
+                        saveFileToSelectedLocation(
+                            applicationContext,
+                            uri,
+                            originalFile
+                        )
+                    }
+                }
+            }
+
+
         Preferences.getInstance(applicationContext)
 
         setContent {
-            AppTheme {
-                MainScreen()
+            val theme = viewModel.theme.collectAsState().value
+            AppTheme(theme) {
+                MainScreen(saveFileToSelectedLocLauncher)
             }
         }
     }
@@ -101,7 +123,8 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalAnimationApi::class)
     @Composable
-    fun MainScreen() {
+    fun MainScreen(saveFileToSelectedLocLauncher: ActivityResultLauncher<Intent>) {
+        var selectedCategory by remember { mutableStateOf("Other") }
         val categoryList by viewModel.categoryList.collectAsState()
         var recentSavedFileUri by remember { mutableStateOf("".toUri()) }
         val navController = rememberNavController()
@@ -114,30 +137,29 @@ class MainActivity : ComponentActivity() {
         }
 
         if (showDialog == 1) {
-            CustomDialog(onDismissRequest = {}) {
-                InputContent(
-                    categoryList = categoryList,
-                    oldFileName = "Pro scanner ${getTodayDate()}",
-                    onNegativeClick = { fileName ->
-                        showDialog = 0
-                        saveFile(fileName, recentSavedFileUri, isAllowed)
-                    },
-                    onPositiveClick = { fileName ->
-                        showDialog = 0
-                        saveFile(fileName, recentSavedFileUri, isAllowed)
-                    })
-            }
+            SaveFileDialog(
+                isNewFile = true,
+                categoryList = categoryList,
+                oldFileName = "Pro scan ${getTodayDate()}",
+                category = "Other",
+                onDismiss = { showDialog = 0 },
+                onSave = { fileName, category ->
+                    showDialog = 0
+                    saveFile(fileName, recentSavedFileUri, isAllowed, category)
+                }
+            )
         } else if (showDialog == 2) {
-            CustomDialog(onDismissRequest = {}) {
-                InputContent(
-                    categoryList = categoryList,
-                    oldFileName = recentSavedFileUri.toFile().name,
-                    onNegativeClick = { showDialog = 0 },
-                    onPositiveClick = { fileName ->
-                        showDialog = 0
-                        renameFile(fileName, recentSavedFileUri, isAllowed)
-                    })
-            }
+            SaveFileDialog(
+                isNewFile = false,
+                categoryList = categoryList,
+                oldFileName = recentSavedFileUri.lastPathSegment.toString(),
+                category = selectedCategory,
+                onDismiss = { showDialog = 0 },
+                onSave = { fileName, category ->
+                    showDialog = 0
+                    renameFile(fileName, recentSavedFileUri, isAllowed, selectedCategory, category)
+                }
+            )
         }
 
         val scannerLauncher =
@@ -204,9 +226,32 @@ class MainActivity : ComponentActivity() {
                             innerPadding,
                             if (showPermissionDialogFrequency(context = this@MainActivity)) 1 else 0,
                             viewModel.getIsSwipeToDeleteEnable(),
-                            onEditClick = {
+                            onEditClick = { uri ->
+                                selectedCategory = uri.second
+                                recentSavedFileUri = uri.first
                                 showDialog = 2
-                                recentSavedFileUri = it
+                            },
+                            duplicateFile = { item ->
+                                saveFile(
+                                    "Pro scan ${getTodayDate()} copy",
+                                    item.first,
+                                    isAllowed,
+                                    item.second
+                                )
+                            },
+                            askFileSaveLocation = { originalUri ->
+                                if (isAllowed) {
+                                    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                        type = "application/pdf"
+                                        putExtra(Intent.EXTRA_TITLE, originalUri.lastPathSegment)
+                                        addCategory(Intent.CATEGORY_OPENABLE)
+                                    }
+                                    originalFile = originalUri
+                                    saveFileToSelectedLocLauncher.launch(intent)
+                                    true
+                                } else {
+                                    false
+                                }
                             }
                         )
                     }
@@ -237,10 +282,12 @@ class MainActivity : ComponentActivity() {
                         }) {
                         selectedItem.intValue = 2
                         SettingScreen(
+                            this@MainActivity,
                             viewModel,
                             innerPadding,
                             getVersionName(this@MainActivity),
-                            isAllowed
+                            isAllowed,
+                            askPermission = { askPermission(this@MainActivity) }
                         )
                     }
                 }
@@ -248,40 +295,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun renameFile(newFileName: String, uri: Uri, isAllowed: Boolean) {
-        viewModel.removeDocument(uri)
-        val file = if (isAllowed) {
-            renameFileInDirectory(
-                checkAndCreateDirectory(),
-                newFileName,
-                uri.toFile()
-            )
-        } else {
-            renameFileInDirectory(
-                checkAndCreateInternalDirectory(this@MainActivity),
-                newFileName,
-                uri.toFile()
-            )
-        }
-        viewModel.addDocument(file)
-    }
-
-    private fun saveFile(fileName: String, uri: Uri, isAllowed: Boolean) {
-        val file = if (isAllowed) {
-            saveFileInDirectory(
-                checkAndCreateDirectory(),
-                fileName,
-                uri.toFile()
-            )
-        } else {
-            saveFileInDirectory(
-                checkAndCreateInternalDirectory(this@MainActivity),
-                fileName,
-                uri.toFile()
-            )
-        }
-        viewModel.addDocument(file)
-    }
 
     @Composable
     fun BottomNavigationBar(
@@ -305,7 +318,7 @@ class MainActivity : ComponentActivity() {
                             .width(40.dp)
                             .rotate(90f)
                             .padding(8.dp),
-                        painter = painterResource(id = R.drawable.ic_folder),
+                        painter = painterResource(id = R.drawable.folder),
                         contentDescription = "Folder"
                     )
                 }
@@ -321,7 +334,7 @@ class MainActivity : ComponentActivity() {
                         Image(
                             modifier = Modifier.padding(end = 8.dp),
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.surface),
-                            painter = painterResource(id = R.drawable.ic_add),
+                            painter = painterResource(id = R.drawable.add),
                             contentDescription = "Scan"
                         )
                         Text(
@@ -340,11 +353,82 @@ class MainActivity : ComponentActivity() {
                             .height(40.dp)
                             .width(40.dp)
                             .padding(8.dp),
-                        painter = painterResource(id = R.drawable.ic_settings),
+                        painter = painterResource(id = R.drawable.settings),
                         contentDescription = "Settings"
                     )
                 }
             }
         })
+    }
+
+    @Composable
+    fun SaveFileDialog(
+        isNewFile: Boolean,
+        categoryList: List<String>,
+        oldFileName: String,
+        category: String,
+        onDismiss: () -> Unit,
+        onSave: (String, String) -> Unit
+    ) {
+        CustomDialog(onDismissRequest = onDismiss) {
+            InputFilename(
+                categoryList = categoryList,
+                oldFileName = oldFileName,
+                category = category,
+                onNegativeClick = { fileName, category ->
+                    if (isNewFile)
+                        onSave(fileName, category)
+                    else onDismiss()
+                },
+                onPositiveClick = { fileName, category ->
+                    onSave(fileName, category)
+                }
+            )
+        }
+    }
+
+    private fun renameFile(
+        newFileName: String,
+        uri: Uri,
+        isAllowed: Boolean,
+        oldCategory: String,
+        category: String
+    ) {
+        viewModel.removeDocument(uri, oldCategory)
+        val file = if (isAllowed) {
+            renameAndMoveFile(
+                checkAndCreateExternalParentDir(),
+                newFileName,
+                uri.toFile(),
+                category
+            )
+        } else {
+            renameAndMoveFile(
+                checkAndCreateInternalParentDir(this),
+                newFileName,
+                uri.toFile(),
+                category
+            )
+        }
+        viewModel.addDocument(file, category)
+    }
+
+    private fun saveFile(fileName: String, uri: Uri, isAllowed: Boolean, category: String) {
+        val file = if (isAllowed) {
+            saveFileInDirectory(
+                checkAndCreateExternalParentDir(),
+                fileName,
+                uri.toFile(),
+                category
+            )
+        } else {
+            saveFileInDirectory(
+                checkAndCreateInternalParentDir(this@MainActivity),
+                fileName,
+                uri.toFile(),
+                category
+            )
+        }
+        viewModel.addDocument(file, category)
     }
 }

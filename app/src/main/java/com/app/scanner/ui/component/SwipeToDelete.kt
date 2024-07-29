@@ -13,27 +13,25 @@ import androidx.compose.material.DismissValue
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.SwipeToDismiss
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
+import com.app.scanner.R
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SwipeToDeleteContainer(
     isSwipeToDeleteEnable: Boolean,
-    item: Uri,
-    onDelete: (Uri) -> Unit,
+    item: Pair<Uri, String>,
+    onDelete: (Pair<Uri, String>) -> Boolean,
     animationDuration: Int = 300,
     content: @Composable (Uri) -> Unit,
 ) {
@@ -42,7 +40,7 @@ fun SwipeToDeleteContainer(
     }
     val state = rememberDismissState(
         confirmStateChange = { value ->
-            if (value == DismissValue.DismissedToStart) {
+            if (value == DismissValue.DismissedToStart &&  onDelete(item)) {
                 isRemoved = true
                 true
             } else {
@@ -50,13 +48,6 @@ fun SwipeToDeleteContainer(
             }
         }
     )
-
-    LaunchedEffect(key1 = isRemoved) {
-        if (isRemoved) {
-            delay(animationDuration.toLong())
-            onDelete(item)
-        }
-    }
 
     AnimatedVisibility(
         visible = !isRemoved,
@@ -70,7 +61,7 @@ fun SwipeToDeleteContainer(
             background = {
                 DeleteBackground()
             },
-            dismissContent = { content(item) },
+            dismissContent = { content(item.first) },
             directions = if (isSwipeToDeleteEnable) setOf(DismissDirection.EndToStart) else setOf()
         )
     }
@@ -86,7 +77,7 @@ fun DeleteBackground(
         contentAlignment = Alignment.CenterEnd
     ) {
         Icon(
-            imageVector = Icons.Default.Delete,
+            painter = painterResource(id = R.drawable.delete_24),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.error
         )

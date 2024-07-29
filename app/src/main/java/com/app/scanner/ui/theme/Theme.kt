@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.app.scanner.util.ThemeOption
 
 private val DarkColorScheme = darkColorScheme(
     primary = LightBlue,
@@ -47,18 +48,25 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun AppTheme(
+    themeOption: ThemeOption,
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    val colorScheme = when (themeOption) {
+        ThemeOption.LIGHT -> LightColorScheme
+        ThemeOption.DARK -> DarkColorScheme
+        ThemeOption.SYSTEM -> {
+            if (darkTheme) DarkColorScheme
+            else LightColorScheme
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        ThemeOption.DYNAMIC -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            } else if (darkTheme) DarkColorScheme
+            else LightColorScheme
+        }
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
