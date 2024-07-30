@@ -16,6 +16,7 @@ fun pdfToBitmap(pdfFile: File): Pair<Int, String> {
         val renderer =
             PdfRenderer(ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY))
         pageCount = renderer.pageCount
+        renderer.close()
     } catch (ex: Exception) {
         ex.printStackTrace()
     }

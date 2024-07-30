@@ -3,21 +3,28 @@ package com.app.scanner.util
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.os.Environment
+import android.os.ParcelFileDescriptor
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
+import com.app.scanner.R
+import com.app.scanner.util.Constants.Companion.PRO_SCANNER
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.Locale
 
-fun checkAndCreateExternalParentDir(): File {
+fun checkAndCreateExternalParentDir(parentDir: String = PRO_SCANNER): File {
     val dirPath: String =
-        Environment.getExternalStorageDirectory().absolutePath + File.separator + "Pro Scanner"
+        Environment.getExternalStorageDirectory().absolutePath + File.separator + parentDir
     val projDir = File(dirPath)
     if (!projDir.exists())
         projDir.mkdirs()
@@ -26,7 +33,7 @@ fun checkAndCreateExternalParentDir(): File {
 }
 
 fun checkAndCreateInternalParentDir(context: Activity): File {
-    val dirPath: String = context.filesDir.absolutePath + File.separator + "Pro Scanner"
+    val dirPath: String = context.filesDir.absolutePath + File.separator + PRO_SCANNER
     val projDir = File(dirPath)
     if (!projDir.exists())
         projDir.mkdirs()
@@ -46,9 +53,10 @@ fun saveFileInDirectory(
     fileName: String,
     fileContent: File,
     category: String
-): Uri {
+): Uri? {
     val projDir = checkAndCreateChildDir(directory, category)
     val file = File(projDir, "$fileName.pdf")
+    if (file.exists()) return null
     try {
         FileInputStream(fileContent).use { inputStream ->
             FileOutputStream(file).use { outputStream ->
@@ -67,7 +75,7 @@ fun saveFileInDirectory(
 
 fun renameAndMoveFile(directory: File, fileName: String, fileContent: File, category: String): Uri {
     val projDir = checkAndCreateChildDir(directory, category)
-    val to = File(projDir, fileName)
+    val to = File(projDir, "$fileName.pdf")
     if (projDir.exists() && fileContent.exists()) fileContent.renameTo(to)
     return to.toUri()
 }
@@ -118,7 +126,7 @@ fun shareSelectedFiles(context: Activity, fileList: List<Pair<Uri, String>>) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
-    val chooserIntent = Intent.createChooser(intent, "Share files")
+    val chooserIntent = Intent.createChooser(intent, context.getString(R.string.share_files))
     context.startActivity(chooserIntent)
 }
 
@@ -132,9 +140,10 @@ fun saveFileToSelectedLocation(context: Context, destinationUri: Uri, originalFi
                 input.copyTo(output)
             }
         }
-        Toast.makeText(context, "File copied successfully", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.file_copied_successfully), Toast.LENGTH_SHORT).show()
     } catch (e: Exception) {
-        Toast.makeText(context, "Something went wrong, File not saved!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context,
+            context.getString(R.string.something_went_wrong_file_not_saved), Toast.LENGTH_SHORT).show()
 
     } finally {
         inputStream?.close()
@@ -159,6 +168,36 @@ fun deleteGivenFiles(context: Activity, uriList: List<Pair<Uri, String>>): List<
     }
 
     return failedDeletions
+}
+
+suspend fun savePdfPagesAsImages(pdfFile: File, outputDir: File): Int {
+    return withContext(Dispatchers.IO) {
+        val savedImages = mutableListOf<File>()
+        val fileName = pdfFile.name
+        val parcelFileDescriptor =
+            ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY)
+        val pdfRenderer = PdfRenderer(parcelFileDescriptor)
+
+        for (pageIndex in 0 until pdfRenderer.pageCount) {
+            val page = pdfRenderer.openPage(pageIndex)
+
+            val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
+            page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+
+            val outputFile = File(outputDir, "$fileName page_${pageIndex + 1}.png")
+            FileOutputStream(outputFile).use { outStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream)
+            }
+            savedImages.add(outputFile)
+
+            page.close()
+        }
+
+        pdfRenderer.close()
+        parcelFileDescriptor.close()
+
+        savedImages.size
+    }
 }
 
 private fun deleteFileFromPath(path: String?): Boolean {

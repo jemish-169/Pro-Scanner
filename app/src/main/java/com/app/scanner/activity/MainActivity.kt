@@ -3,6 +3,7 @@ package com.app.scanner.activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -26,6 +27,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,12 +37,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toFile
 import androidx.core.net.toUri
@@ -72,6 +77,7 @@ import com.app.scanner.util.scanDoc
 import com.app.scanner.util.showPermissionDialogFrequency
 import com.app.scanner.viewModel.MainViewModel
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -82,6 +88,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setTheme(R.style.Theme_Scanner)
 
         repository = Repository(context = this@MainActivity)
 
@@ -131,6 +138,8 @@ class MainActivity : ComponentActivity() {
         var isOnboarded by remember { mutableStateOf(viewModel.getOnboarded()) }
         val selectedItem = remember { mutableIntStateOf(1) }
         var showDialog by remember { mutableIntStateOf(0) }
+        val snackBarHostState = remember { SnackbarHostState() }
+        val scope = rememberCoroutineScope()
 
         LaunchedEffect(Unit) {
             viewModel.getCategories()
@@ -141,7 +150,7 @@ class MainActivity : ComponentActivity() {
                 isNewFile = true,
                 categoryList = categoryList,
                 oldFileName = "Pro scan ${getTodayDate()}",
-                category = "Other",
+                category = selectedCategory,
                 onDismiss = { showDialog = 0 },
                 onSave = { fileName, category ->
                     showDialog = 0
@@ -152,7 +161,7 @@ class MainActivity : ComponentActivity() {
             SaveFileDialog(
                 isNewFile = false,
                 categoryList = categoryList,
-                oldFileName = recentSavedFileUri.lastPathSegment.toString(),
+                oldFileName = recentSavedFileUri.lastPathSegment.toString().dropLast(4),
                 category = selectedCategory,
                 onDismiss = { showDialog = 0 },
                 onSave = { fileName, category ->
@@ -177,20 +186,22 @@ class MainActivity : ComponentActivity() {
         if (!isOnboarded) {
             WelcomeScreen(viewModel = viewModel, onFinish = { isOnboarded = true })
         } else {
-            Scaffold(bottomBar = {
-                BottomNavigationBar(
-                    onFilesClick = {
-                        if (selectedItem.intValue != 1) navController.navigateUp()
-                    },
-                    onSettingClick = {
-                        if (selectedItem.intValue != 2) navController.navigate(SettingScreen)
-                    },
-                    onScanDocClick = {
-                        scanDoc(this@MainActivity, scannerLauncher)
-                    },
-                    selectedItem = selectedItem.intValue
-                )
-            }) { innerPadding ->
+            Scaffold(
+                snackbarHost = { SnackbarHost(snackBarHostState) },
+                bottomBar = {
+                    BottomNavigationBar(
+                        onFilesClick = {
+                            if (selectedItem.intValue != 1) navController.navigateUp()
+                        },
+                        onSettingClick = {
+                            if (selectedItem.intValue != 2) navController.navigate(SettingScreen)
+                        },
+                        onScanDocClick = {
+                            scanDoc(this@MainActivity, scannerLauncher)
+                        },
+                        selectedItem = selectedItem.intValue
+                    )
+                }) { innerPadding ->
                 NavHost(
                     navController = navController, startDestination = HomeScreen
                 ) {
@@ -232,12 +243,15 @@ class MainActivity : ComponentActivity() {
                                 showDialog = 2
                             },
                             duplicateFile = { item ->
-                                saveFile(
-                                    "Pro scan ${getTodayDate()} copy",
-                                    item.first,
-                                    isAllowed,
-                                    item.second
-                                )
+                                scope.launch {
+                                    saveFile(
+                                        getString(R.string.pro_scan_copy, getTodayDate()),
+                                        item.first,
+                                        isAllowed,
+                                        item.second
+                                    )
+                                    snackBarHostState.showSnackbar(getString(R.string.file_copied_successfully))
+                                }
                             },
                             askFileSaveLocation = { originalUri ->
                                 if (isAllowed) {
@@ -252,6 +266,17 @@ class MainActivity : ComponentActivity() {
                                 } else {
                                     false
                                 }
+                            },
+                            saveFileAsImages = { image ->
+                                if (isAllowed) {
+                                    scope.launch {
+                                        snackBarHostState.showSnackbar(getString(R.string.saving_images))
+                                        val count = viewModel.saveFileAsImages(image)
+                                        if (count == 0) snackBarHostState.showSnackbar(getString(R.string.failed_to_save_images_try_again))
+                                        else snackBarHostState.showSnackbar("$count ${if (count == 1) "Image" else "Images"} saved.")
+                                    }
+                                    true
+                                } else false
                             }
                         )
                     }
@@ -319,7 +344,7 @@ class MainActivity : ComponentActivity() {
                             .rotate(90f)
                             .padding(8.dp),
                         painter = painterResource(id = R.drawable.folder),
-                        contentDescription = "Folder"
+                        contentDescription = stringResource(R.string.folder)
                     )
                 }
 
@@ -335,10 +360,10 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(end = 8.dp),
                             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.surface),
                             painter = painterResource(id = R.drawable.add),
-                            contentDescription = "Scan"
+                            contentDescription = stringResource(R.string.scan)
                         )
                         Text(
-                            text = "SCAN"
+                            text = stringResource(R.string.scan_cap)
                         )
                     }
                 }
@@ -354,7 +379,7 @@ class MainActivity : ComponentActivity() {
                             .width(40.dp)
                             .padding(8.dp),
                         painter = painterResource(id = R.drawable.settings),
-                        contentDescription = "Settings"
+                        contentDescription = stringResource(R.string.settings)
                     )
                 }
             }
@@ -429,6 +454,9 @@ class MainActivity : ComponentActivity() {
                 category
             )
         }
-        viewModel.addDocument(file, category)
+        if (file != null)
+            viewModel.addDocument(file, category)
+        else Toast.makeText(this, getString(R.string.file_already_exists), Toast.LENGTH_SHORT)
+            .show()
     }
 }

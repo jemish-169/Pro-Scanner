@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -81,7 +82,7 @@ fun InputCategory(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.add),
-                        contentDescription = "Add category",
+                        contentDescription = stringResource(R.string.add_category),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .size(32.dp)
@@ -89,7 +90,7 @@ fun InputCategory(
                     )
                 }
                 Text(
-                    "Add category name",
+                    stringResource(R.string.add_category_name),
                     style = MaterialTheme.typography.bodyLarge,
                     fontSize = 24.sp
                 )
@@ -102,10 +103,10 @@ fun InputCategory(
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
                     label = {
-                        Text(text = "Category", maxLines = 1)
+                        Text(text = stringResource(R.string.category), maxLines = 1)
                     },
                     placeholder = {
-                        Text(text = "Add category", maxLines = 1)
+                        Text(text = stringResource(id = R.string.add_category), maxLines = 1)
                     },
                     singleLine = true,
                     maxLines = 1,
@@ -131,7 +132,7 @@ fun InputCategory(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             ) {
                 Text(
-                    "Cancel",
+                    stringResource(R.string.cancel),
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
@@ -150,7 +151,7 @@ fun InputCategory(
                         onPositiveClick(categoryName.text)
                 }) {
                 Text(
-                    "Save",
+                    stringResource(R.string.save),
                     color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )

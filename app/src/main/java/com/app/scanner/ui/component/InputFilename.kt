@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -88,7 +89,7 @@ fun InputFilename(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.file),
-                        contentDescription = "File",
+                        contentDescription = stringResource(R.string.file),
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .size(32.dp)
@@ -96,7 +97,9 @@ fun InputFilename(
                     )
                 }
                 Text(
-                    "Rename your file", style = MaterialTheme.typography.bodyLarge, fontSize = 24.sp
+                    stringResource(R.string.rename_a_file),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontSize = 24.sp
                 )
                 OutlinedTextField(
                     value = fileName,
@@ -106,10 +109,10 @@ fun InputFilename(
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
                     label = {
-                        Text(text = "File name", maxLines = 1)
+                        Text(text = stringResource(R.string.file_name), maxLines = 1)
                     },
                     placeholder = {
-                        Text(text = "Name a file", maxLines = 1)
+                        Text(text = stringResource(id = R.string.file_name), maxLines = 1)
                     },
                     isError = fileName.text.isEmpty(),
                     singleLine = true,
@@ -123,7 +126,7 @@ fun InputFilename(
                     shape = RoundedCornerShape(8.dp),
                 )
 
-                Text(text = "Select Category for your file")
+                Text(text = stringResource(R.string.select_category_for_your_file))
                 Spacer(modifier = Modifier.height(8.dp))
                 ChipGroup(
                     categoryList = categoryList,
@@ -146,7 +149,7 @@ fun InputFilename(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
             ) {
                 Text(
-                    "Cancel",
+                    stringResource(id = R.string.cancel),
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
@@ -165,7 +168,7 @@ fun InputFilename(
                         onPositiveClick(fileName.text, selectedCategory)
                 }) {
                 Text(
-                    "Save",
+                    stringResource(id = R.string.save),
                     color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )

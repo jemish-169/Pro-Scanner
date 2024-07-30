@@ -18,9 +18,7 @@
         <item name="colorOnSurface">@color/onSurface</item>
     </style>
 
-    <!--    <style name="Theme.App.Starting" parent="Theme.SplashScreen">-->
-    <!--        <item name="windowSplashScreenBackground">@color/app_icon_background</item>-->
-    <!--        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>-->
-    <!--        <item name="postSplashScreenTheme">@style/Theme.Scanner</item>-->
-    <!--    </style>-->
+    <style name="Theme.SplashScreen" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+    </style>
 </resources>
