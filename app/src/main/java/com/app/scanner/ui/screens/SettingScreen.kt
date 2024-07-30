@@ -52,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -79,8 +80,7 @@ fun SettingScreen(
     val categoryList by viewModel.categoryList.collectAsState()
 
     LaunchedEffect(Unit) {
-        if (categoryList.isEmpty())
-            viewModel.getCategories()
+        if (categoryList.isEmpty()) viewModel.getCategories()
     }
 
     Column(
@@ -97,28 +97,26 @@ fun SettingScreen(
                 .height(88.dp)
         ) {
             Text(
-                text = "Settings",
+                text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.bodyLarge,
                 fontSize = 24.sp,
                 color = MaterialTheme.colorScheme.primary,
             )
         }
 
-        SettingCategoryItems(
-            context = context,
+        SettingCategoryItems(context = context,
             icon = R.drawable.category,
-            title = "Document Categories",
+            title = stringResource(R.string.document_categories),
             categoryList = categoryList,
             addCategory = { category ->
                 viewModel.addCategoryInList(category)
             },
             onRemoveCategory = { category ->
                 viewModel.removeCategoryFromList(category)
-            }
-        )
+            })
 
         SettingSwitchItem(icon = R.drawable.delete_24,
-            title = "Swipe Pdf item to delete",
+            title = stringResource(R.string.swipe_pdf_item_to_delete),
             isChecked = isSwipeToDeleteEnable,
             onCheckedChange = {
                 isSwipeToDeleteEnable = !isSwipeToDeleteEnable
@@ -128,7 +126,7 @@ fun SettingScreen(
         ThemeSelector(viewModel)
 
         Text(
-            text = "App information",
+            text = stringResource(R.string.app_information),
             fontSize = 22.sp,
             modifier = Modifier
                 .padding(horizontal = 4.dp)
@@ -137,32 +135,34 @@ fun SettingScreen(
 
         AppInfoAnnotatedItem(
             icon = R.drawable.info,
-            title = "Files management in app",
+            title = stringResource(R.string.files_management_in_app),
             subtitle = "We are using ${if (isAllowed) "External" else "Internal"} storage to manage files.",
-            extraString = if (!isAllowed) "Give permission" else "",
+            extraString = if (!isAllowed) stringResource(R.string.give_permission) else "",
             askPermission
         )
 
         AppInformationItem(
             icon = R.drawable.share_24,
-            title = "Share Pro scanner app",
-            subtitle = "Share app and make their life easy"
+            title = stringResource(R.string.share_pro_scanner_app),
+            subtitle = stringResource(R.string.share_app_and_make_their_life_easy)
         )
 
         AppInformationItem(
             icon = R.drawable.star_24,
-            title = "Rate this App",
-            subtitle = "Rate app on play store"
+            title = stringResource(R.string.rate_this_app),
+            subtitle = stringResource(R.string.rate_app_on_play_store)
         )
 
         AppInformationItem(
             icon = R.drawable.rounded_lock_24,
-            title = "Privacy Policy",
-            subtitle = "Read this app's privacy policy"
+            title = stringResource(R.string.privacy_policy),
+            subtitle = stringResource(R.string.read_this_app_s_privacy_policy)
         )
 
         AppInformationItem(
-            icon = R.drawable.round_commit_24, title = "Version Number", subtitle = versionName
+            icon = R.drawable.round_commit_24,
+            title = stringResource(R.string.version_number),
+            subtitle = versionName
         )
     }
 }
@@ -187,35 +187,29 @@ fun ThemeSelector(viewModel: MainViewModel) {
         Icon(
             painter = painterResource(id = R.drawable.select_theme),
             contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(end = 16.dp)
         )
         Text(
-            text = "Current Theme",
-            modifier = Modifier.weight(1f)
+            text = stringResource(R.string.current_theme), modifier = Modifier.weight(1f)
         )
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
         ) {
-            OutlinedTextField(
-                modifier = Modifier
-                    .menuAnchor()
-                    .width(160.dp),
+            OutlinedTextField(modifier = Modifier
+                .menuAnchor()
+                .width(160.dp),
                 readOnly = true,
                 value = currentTheme.displayName,
                 onValueChange = {},
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) })
+            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 ThemeOption.entries.forEach { themeOption ->
-                    DropdownMenuItem(
-                        onClick = {
-                            viewModel.setTheme(themeOption)
-                            expanded = false
-                        },
+                    DropdownMenuItem(onClick = {
+                        viewModel.setTheme(themeOption)
+                        expanded = false
+                    },
                         text = {
                             Text(text = themeOption.displayName)
                         },
@@ -238,6 +232,7 @@ fun AppInformationItem(icon: Int, title: String, subtitle: String) {
         Icon(
             painter = painterResource(id = icon),
             contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -256,11 +251,7 @@ fun AppInformationItem(icon: Int, title: String, subtitle: String) {
 
 @Composable
 fun AppInfoAnnotatedItem(
-    icon: Int,
-    title: String,
-    subtitle: String,
-    extraString: String,
-    askPermission: () -> Unit
+    icon: Int, title: String, subtitle: String, extraString: String, askPermission: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -271,6 +262,7 @@ fun AppInfoAnnotatedItem(
         Icon(
             painter = painterResource(id = icon),
             contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
@@ -279,9 +271,7 @@ fun AppInfoAnnotatedItem(
                 text = title,
             )
             Text(
-                text = subtitle,
-                fontSize = 14.sp,
-                style = MaterialTheme.typography.bodySmall
+                text = subtitle, fontSize = 14.sp, style = MaterialTheme.typography.bodySmall
             )
             if (extraString.isNotEmpty()) {
                 Text(
@@ -317,6 +307,7 @@ fun SettingSwitchItem(
         Icon(
             painter = painterResource(id = icon),
             contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(end = 16.dp)
         )
         Text(
@@ -344,36 +335,39 @@ fun SettingCategoryItems(
     val rotation by animateFloatAsState(
         targetValue = if (isOpened) 90f else 0f,
         animationSpec = tween(durationMillis = 500),
-        label = "animate icon"
+        label = stringResource(R.string.animate_icon)
     )
 
     var showDialog by remember { mutableIntStateOf(0) }
 
     if (showDialog == 1) {
         CustomDialog(onDismissRequest = { }) {
-            InputCategory(
-                onPositiveClick = { category ->
-                    showDialog = 0
-                    if (categoryList.contains(category)) {
-                        Toast.makeText(context, "Category already exists", Toast.LENGTH_SHORT)
-                            .show()
-                    } else {
-                        addCategory(category)
-                    }
-                },
-                onNegativeClick = {
-                    showDialog = 0
-                })
+            InputCategory(onPositiveClick = { category ->
+                showDialog = 0
+                if (categoryList.contains(category)) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.category_already_exists),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    addCategory(category)
+                }
+            }, onNegativeClick = {
+                showDialog = 0
+            })
         }
     } else if (showDialog == 2) {
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
             DialogContent(icon = R.drawable.delete_24,
                 iconTint = MaterialTheme.colorScheme.error,
-                iconDesc = "Delete?",
-                titleText = "Are you sure, you want to delete $selectedCategory?",
-                descText = "Do not worry, your files will not be deleted.",
-                positiveBtn = "Delete",
-                negativeBtn = "Cancel",
+                iconDesc = stringResource(R.string.delete),
+                titleText = stringResource(
+                    R.string.are_you_sure_you_want_to_delete, selectedCategory
+                ),
+                descText = stringResource(R.string.do_not_worry_your_files_will_not_be_deleted),
+                positiveBtn = stringResource(R.string.delete_word),
+                negativeBtn = stringResource(R.string.cancel),
                 onNegativeClick = {
                     showDialog = 0
                 },
@@ -397,6 +391,7 @@ fun SettingCategoryItems(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 painter = painterResource(id = icon),
+                tint = MaterialTheme.colorScheme.primary,
                 contentDescription = null,
                 modifier = Modifier.padding(end = 16.dp)
             )
@@ -421,16 +416,15 @@ fun SettingCategoryItems(
         ) {
             FlowRow {
                 categoryList.forEach { category ->
-                    CategoryItem(
-                        category = category, icon = R.drawable.close, contentDesc = "Remove",
+                    CategoryItem(category = category,
+                        icon = R.drawable.close,
+                        contentDesc = stringResource(R.string.remove),
                         onClick = {
                             selectedCategory = category
                             showDialog = 2
-                        }
-                    )
+                        })
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
                         .padding(4.dp)
@@ -443,12 +437,11 @@ fun SettingCategoryItems(
                         .border(
                             BorderStroke(1.dp, MaterialTheme.colorScheme.secondary), CircleShape
                         )
-                        .padding(vertical = 4.dp, horizontal = 10.dp)
-                ) {
-                    Text(text = "Add category")
+                        .padding(vertical = 4.dp, horizontal = 10.dp)) {
+                    Text(text = stringResource(R.string.add_category))
                     Icon(
                         painter = painterResource(R.drawable.add),
-                        contentDescription = "Add category",
+                        contentDescription = stringResource(R.string.add_category),
                         modifier = Modifier
                             .padding(start = 4.dp)
                             .clip(CircleShape)
@@ -462,10 +455,7 @@ fun SettingCategoryItems(
 
 @Composable
 fun CategoryItem(
-    category: String,
-    icon: Int,
-    contentDesc: String,
-    onClick: () -> Unit
+    category: String, icon: Int, contentDesc: String, onClick: () -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -474,8 +464,7 @@ fun CategoryItem(
             .padding(4.dp)
             .clip(CircleShape)
             .background(
-                color = MaterialTheme.colorScheme.secondary.copy(0.0f),
-                shape = CircleShape
+                color = MaterialTheme.colorScheme.secondary.copy(0.0f), shape = CircleShape
             )
             .border(
                 BorderStroke(1.dp, MaterialTheme.colorScheme.secondary), CircleShape
@@ -489,7 +478,6 @@ fun CategoryItem(
                 .padding(start = 4.dp)
                 .clip(CircleShape)
                 .clickable { onClick() }
-                .size(20.dp)
-        )
+                .size(20.dp))
     }
 }

@@ -100,7 +100,7 @@ val Typography = Typography(
     ),
     bodyMedium = TextStyle(
         fontFamily = rubikFamily,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight(450),
         fontSize = 14.sp,
         lineHeight = 20.sp,
         letterSpacing = 0.25.sp

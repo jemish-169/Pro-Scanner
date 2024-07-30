@@ -8,6 +8,7 @@ import com.app.scanner.repository.Repository
 import com.app.scanner.util.Preferences
 import com.app.scanner.util.ThemeOption
 import com.app.scanner.util.deleteGivenFiles
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +22,7 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private val _categoryList = MutableStateFlow<List<String>>(emptyList())
     val categoryList: StateFlow<List<String>> = _categoryList.asStateFlow()
 
-    private val _theme = MutableStateFlow(ThemeOption.SYSTEM)
+    private val _theme = MutableStateFlow(ThemeOption.DYNAMIC)
     val theme: StateFlow<ThemeOption> = _theme
 
     init {
@@ -92,5 +93,13 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     fun removeCategoryFromList(category: String) {
         _categoryList.value -= category
         setCategoryList(_categoryList.value)
+    }
+
+    suspend fun saveFileAsImages(image: Pair<Uri, String>): Int {
+        var count = 0
+        viewModelScope.async {
+            count = repository.saveFileAsImages(image)
+        }.await()
+        return count
     }
 }

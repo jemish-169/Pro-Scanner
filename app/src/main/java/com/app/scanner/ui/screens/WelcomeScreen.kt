@@ -3,6 +3,7 @@ package com.app.scanner.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.scanner.R
 import com.app.scanner.util.Constants.Companion.DEFAULT_CATEGORY_LIST
 import com.app.scanner.util.OnBoardingPage
 import com.app.scanner.viewModel.MainViewModel
@@ -43,7 +46,7 @@ fun WelcomeScreen(
         initialPage = 0,
     )
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
         HorizontalPager(
             modifier = Modifier.weight(10f),
             state = pagerState,
@@ -80,13 +83,14 @@ fun PagerScreen(onBoardingPage: OnBoardingPage) {
                 .fillMaxWidth(0.7f)
                 .fillMaxHeight(0.7f),
             painter = painterResource(id = onBoardingPage.image),
-            contentDescription = "Pager Image"
+            contentDescription = stringResource(R.string.pager_image)
         )
         Text(
             fontSize = 24.sp,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 40.dp),
+            color = MaterialTheme.colorScheme.onSurface,
             text = onBoardingPage.title,
         )
         Text(
@@ -94,6 +98,7 @@ fun PagerScreen(onBoardingPage: OnBoardingPage) {
                 .fillMaxWidth()
                 .padding(horizontal = 40.dp)
                 .padding(top = 20.dp),
+            color = MaterialTheme.colorScheme.onSurface,
             text = onBoardingPage.description,
         )
     }
@@ -118,7 +123,7 @@ fun FinishButton(
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
-                Text(text = "Finish")
+                Text(text = stringResource(R.string.finish))
             }
         }
     }

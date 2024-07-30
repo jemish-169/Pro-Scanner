@@ -4,7 +4,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import com.app.scanner.R
 import com.app.scanner.databinding.ActivityViewPdfBinding
+import com.app.scanner.util.Constants.Companion.SELECTED_FILES
+import com.app.scanner.util.Constants.Companion.SELECTED_FILE_NAME
 import com.app.scanner.util.shareSelectedFiles
 
 class ViewPdfActivity : AppCompatActivity() {
@@ -15,11 +18,11 @@ class ViewPdfActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityViewPdfBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        if (intent.hasExtra("SelectedFile")) {
-            selectedFile = intent.getStringExtra("SelectedFile").toString()
+        if (intent.hasExtra(SELECTED_FILES)) {
+            selectedFile = intent.getStringExtra(SELECTED_FILES).toString()
         }
-        if (intent.hasExtra("SelectedFileName")) {
-            selectedFileName = intent.getStringExtra("SelectedFileName").toString()
+        if (intent.hasExtra(SELECTED_FILE_NAME)) {
+            selectedFileName = intent.getStringExtra(SELECTED_FILE_NAME).toString()
         }
 
         binding.pdfView.initWithUrl(
@@ -34,7 +37,7 @@ class ViewPdfActivity : AppCompatActivity() {
         binding.shareIcon.setOnClickListener {
             shareSelectedFiles(
                 this@ViewPdfActivity,
-                listOf(Pair(selectedFile.toUri(), "Pro Scanner"))
+                listOf(Pair(selectedFile.toUri(), getString(R.string.app_name)))
             )
         }
     }

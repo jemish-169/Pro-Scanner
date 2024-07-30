@@ -62,6 +62,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -79,6 +80,8 @@ import com.app.scanner.ui.component.CustomDialog
 import com.app.scanner.ui.component.DialogContent
 import com.app.scanner.ui.component.SwipeToDeleteContainer
 import com.app.scanner.util.Constants.Companion.ALL
+import com.app.scanner.util.Constants.Companion.SELECTED_FILES
+import com.app.scanner.util.Constants.Companion.SELECTED_FILE_NAME
 import com.app.scanner.util.askPermission
 import com.app.scanner.util.formatFileSize
 import com.app.scanner.util.pdfToBitmap
@@ -95,7 +98,8 @@ fun HomeScreen(
     isSwipeToDeleteEnable: Boolean,
     onEditClick: (Pair<Uri, String>) -> Unit,
     duplicateFile: (Pair<Uri, String>) -> Unit,
-    askFileSaveLocation: (Uri) -> Boolean
+    askFileSaveLocation: (Uri) -> Boolean,
+    saveFileAsImages: (Pair<Uri, String>) -> Boolean
 ) {
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
     val documentList by viewModel.documentList.collectAsState()
@@ -115,11 +119,11 @@ fun HomeScreen(
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
             DialogContent(icon = R.drawable.warning_24,
                 iconTint = MaterialTheme.colorScheme.onSurface,
-                iconDesc = "Warning",
-                titleText = "Need Permission!",
-                descText = "Pro scanner requires permission to manage PDF files.",
-                positiveBtn = "Allow",
-                negativeBtn = "Deny",
+                iconDesc = stringResource(R.string.warning),
+                titleText = stringResource(R.string.need_permission),
+                descText = stringResource(R.string.pro_scanner_requires_permission_to_manage_pdf_files),
+                positiveBtn = stringResource(R.string.allow),
+                negativeBtn = stringResource(R.string.deny),
                 onNegativeClick = { showDialog = 0 },
                 onPositiveClick = {
                     showDialog = 0
@@ -130,11 +134,11 @@ fun HomeScreen(
         CustomDialog(onDismissRequest = { showDialog = 0 }) {
             DialogContent(icon = R.drawable.delete_24,
                 iconTint = MaterialTheme.colorScheme.error,
-                iconDesc = "Delete?",
-                titleText = "Are you sure?",
+                iconDesc = stringResource(R.string.delete),
+                titleText = stringResource(R.string.are_you_sure),
                 descText = "Do you want to delete ${selectedItems.value.size} ${if (selectedItems.value.size == 1) "file?" else "files"}",
-                positiveBtn = "Continue",
-                negativeBtn = "Cancel",
+                positiveBtn = stringResource(R.string.continue_word),
+                negativeBtn = stringResource(R.string.cancel),
                 onNegativeClick = {
                     showDialog = 0
                     selectedItems.value = emptySet()
@@ -151,7 +155,10 @@ fun HomeScreen(
                         "${if (selectedItems.value.size == 1) "File" else "Files"} deleted",
                         Toast.LENGTH_SHORT
                     ).show()
-                    else Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show()
+                    else Toast.makeText(
+                        context,
+                        context.getString(R.string.something_went_wrong), Toast.LENGTH_SHORT
+                    ).show()
                     selectedItems.value = emptySet()
                     isSelectionMode = false
                     isFileDeleted = true
@@ -189,7 +196,7 @@ fun HomeScreen(
                                 painter = painterResource(id = R.drawable.arrow_back),
                                 modifier = Modifier.size(28.dp),
                                 tint = MaterialTheme.colorScheme.onSurface,
-                                contentDescription = "Back icon",
+                                contentDescription = stringResource(id = R.string.back_icon),
                             )
                         }
                         Text(
@@ -218,7 +225,7 @@ fun HomeScreen(
                                 Icon(
                                     painter = painterResource(id = R.drawable.rename),
                                     tint = MaterialTheme.colorScheme.onSurface,
-                                    contentDescription = "Edit icon",
+                                    contentDescription = stringResource(R.string.edit_icon),
                                 )
                             }
                         }
@@ -235,7 +242,7 @@ fun HomeScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.share_24),
                                 tint = MaterialTheme.colorScheme.onSurface,
-                                contentDescription = "share icon",
+                                contentDescription = stringResource(R.string.share_icon),
                             )
                         }
                         IconButton(
@@ -247,7 +254,7 @@ fun HomeScreen(
                             Icon(
                                 painter = painterResource(id = R.drawable.delete_24),
                                 tint = MaterialTheme.colorScheme.onSurface,
-                                contentDescription = "delete icon",
+                                contentDescription = stringResource(R.string.delete_icon),
                             )
                         }
                     }
@@ -264,7 +271,7 @@ fun HomeScreen(
                         .height(88.dp)
                 ) {
                     Text(
-                        text = "Pro Scanner",
+                        text = stringResource(id = R.string.app_name),
                         style = MaterialTheme.typography.bodyLarge,
                         fontSize = 24.sp,
                         color = MaterialTheme.colorScheme.primary
@@ -275,7 +282,7 @@ fun HomeScreen(
                         Icon(
                             imageVector = Icons.Default.Search,
                             modifier = Modifier.size(28.dp),
-                            contentDescription = "search icon",
+                            contentDescription = stringResource(R.string.search_icon),
                         )
                     }
                 }
@@ -292,7 +299,7 @@ fun HomeScreen(
                         focusedIndicatorColor = Color.Transparent
                     ),
                     keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Characters,
+                        capitalization = KeyboardCapitalization.Unspecified,
                         autoCorrectEnabled = false,
                         keyboardType = KeyboardType.Text,
                         imeAction = ImeAction.Search
@@ -306,13 +313,13 @@ fun HomeScreen(
                         }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.arrow_back),
-                                contentDescription = "search field back arrow icon",
+                                contentDescription = stringResource(R.string.back_icon)
                             )
                         }
                     },
                     shape = RoundedCornerShape(8.dp),
                     placeholder = {
-                        Text(text = "Search a file", maxLines = 1)
+                        Text(text = stringResource(R.string.search_a_file), maxLines = 1)
                     },
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.surface)
@@ -385,14 +392,14 @@ fun HomeScreen(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.ic_document_placeholder),
-                    contentDescription = "No Documents",
+                    contentDescription = stringResource(R.string.no_documents),
                     modifier = Modifier.size(120.dp)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "You don't have any documents",
+                    text = stringResource(R.string.you_don_t_have_any_documents),
                     textAlign = TextAlign.Center,
                 )
             }
@@ -416,9 +423,9 @@ fun HomeScreen(
                                         isSelectionMode = newSelection.isNotEmpty()
                                     } else {
                                         val intent = Intent(context, ViewPdfActivity::class.java)
-                                        intent.putExtra("SelectedFile", contentUri.toString())
+                                        intent.putExtra(SELECTED_FILES, contentUri.toString())
                                         intent.putExtra(
-                                            "SelectedFileName", fileName
+                                            SELECTED_FILE_NAME, fileName
                                         )
                                         context.startActivity(intent)
                                     }
@@ -449,7 +456,8 @@ fun HomeScreen(
                                 },
                                 askFileSaveLocation = {
                                     if (!askFileSaveLocation(item.first)) showDialog = 1
-                                }
+                                },
+                                saveFileAsImages = { if (!saveFileAsImages(item)) showDialog = 1 }
                             )
                         },
                         onDelete = { uri ->
@@ -472,6 +480,7 @@ fun ItemPdf(
     isSelected: Boolean,
     onEditClick: () -> Unit,
     isInSelectionMode: Boolean,
+    saveFileAsImages: () -> Unit,
     duplicateFile: () -> Unit,
     shareFile: () -> Unit,
     deleteFile: () -> Unit,
@@ -493,13 +502,21 @@ fun ItemPdf(
             isExpanded = false
             onClickSelectItem()
         }, text = {
-            DropDownItemNameAndIcon(R.drawable.check_circle_24, "Select icon", "Select")
+            DropDownItemNameAndIcon(
+                R.drawable.check_circle_24,
+                stringResource(R.string.select_icon),
+                stringResource(R.string.select)
+            )
         })
         DropdownMenuItem(onClick = {
             isExpanded = false
             onEditClick()
         }, text = {
-            DropDownItemNameAndIcon(R.drawable.rename, "Rename icon", "Rename")
+            DropDownItemNameAndIcon(
+                R.drawable.rename,
+                stringResource(R.string.rename_icon),
+                stringResource(R.string.rename)
+            )
         })
         DropdownMenuItem(onClick = {
             isExpanded = false
@@ -507,27 +524,52 @@ fun ItemPdf(
         }, text = {
             DropDownItemNameAndIcon(
                 R.drawable.download_24,
-                "Save to storage icon",
-                "Save to storage"
+                stringResource(R.string.save_to_storage_icon),
+                stringResource(R.string.save_to_storage)
             )
         })
         DropdownMenuItem(onClick = {
             isExpanded = false
-            duplicateFile()
+            saveFileAsImages()
         }, text = {
-            DropDownItemNameAndIcon(R.drawable.copy_24, "Duplicate icon", "Duplicate")
+            DropDownItemNameAndIcon(
+                R.drawable.save_images,
+                stringResource(R.string.save_image_icon),
+                stringResource(R.string.save_as_images)
+            )
         })
+        DropdownMenuItem(
+            modifier = Modifier.padding(0.dp),
+            onClick = {
+                isExpanded = false
+                duplicateFile()
+            },
+            text = {
+                DropDownItemNameAndIcon(
+                    R.drawable.copy_24,
+                    stringResource(R.string.duplicate_icon),
+                    stringResource(R.string.duplicate)
+                )
+            })
         DropdownMenuItem(onClick = {
             isExpanded = false
             shareFile()
         }, text = {
-            DropDownItemNameAndIcon(R.drawable.share_24, "Share icon", "Share")
+            DropDownItemNameAndIcon(
+                R.drawable.share_24,
+                stringResource(R.string.share_icon),
+                stringResource(R.string.share)
+            )
         })
         DropdownMenuItem(onClick = {
             isExpanded = false
             deleteFile()
         }, text = {
-            DropDownItemNameAndIcon(R.drawable.delete_24, "Delete icon", "Delete")
+            DropDownItemNameAndIcon(
+                R.drawable.delete_24,
+                stringResource(R.string.delete_icon),
+                stringResource(R.string.delete_word)
+            )
         })
     }
 
@@ -609,7 +651,7 @@ fun ItemPdf(
                     }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "MoreVertical",
+                            contentDescription = stringResource(R.string.morevertical),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }

@@ -15,6 +15,7 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.app.scanner.R
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_JPEG
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
@@ -116,7 +117,7 @@ fun scanDoc(
         )
     }.addOnFailureListener {
         Toast.makeText(
-            context, "Something went wrong!", Toast.LENGTH_SHORT
+            context, context.getString(R.string.something_went_wrong), Toast.LENGTH_SHORT
         ).show()
     }
 }

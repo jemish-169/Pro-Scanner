@@ -21,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.app.scanner.R
 
 @Composable
 fun CircleCheckbox(selected: Boolean, onChecked: () -> Unit) {
@@ -56,7 +58,7 @@ fun CircleCheckbox(selected: Boolean, onChecked: () -> Unit) {
         if (selected) {
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = "Checked",
+                contentDescription = stringResource(R.string.checked),
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(16.dp)
             )

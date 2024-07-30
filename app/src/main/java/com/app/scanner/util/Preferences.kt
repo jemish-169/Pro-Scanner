@@ -2,7 +2,6 @@ package com.app.scanner.util
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import com.app.scanner.util.Constants.Companion.CATEGORY_LIST_ITEMS
 import com.app.scanner.util.Constants.Companion.DEFAULT_CATEGORY_LIST
 import com.app.scanner.util.Constants.Companion.IS_ONBOARDED
@@ -37,7 +36,6 @@ class Preferences {
         }
 
         fun setCategoryList(categoryList: List<String>) {
-            Log.e("TAG", "setCategoryList: ${categoryList.size}")
             appPref.edit().putStringSet(CATEGORY_LIST_ITEMS, categoryList.toSet()).apply()
         }
 
