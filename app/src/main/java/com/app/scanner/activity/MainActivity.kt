@@ -3,7 +3,7 @@ package com.app.scanner.activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -83,8 +83,9 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var repository: Repository
     private lateinit var viewModel: MainViewModel
-    private var isAllowed = false
+    private var isAllowed by mutableStateOf(false)
     private lateinit var originalFile: Uri
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,6 +113,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+        requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            Log.e("TAG", "onCreate: launcher $isGranted")
+            isAllowed = isGranted
+        }
 
         Preferences.getInstance(applicationContext)
 
@@ -245,7 +252,8 @@ class MainActivity : ComponentActivity() {
                             duplicateFile = { item ->
                                 scope.launch {
                                     saveFile(
-                                        getString(R.string.pro_scan_copy, getTodayDate()),
+                                        item.first.lastPathSegment?.dropLast(4)
+                                            ?: getString(R.string.pro_scan_copy, getTodayDate()),
                                         item.first,
                                         isAllowed,
                                         item.second
@@ -277,6 +285,12 @@ class MainActivity : ComponentActivity() {
                                     }
                                     true
                                 } else false
+                            },
+                            onPositiveClick = {
+                                askPermission(
+                                    this@MainActivity,
+                                    requestPermissionLauncher
+                                )
                             }
                         )
                     }
@@ -312,7 +326,12 @@ class MainActivity : ComponentActivity() {
                             innerPadding,
                             getVersionName(this@MainActivity),
                             isAllowed,
-                            askPermission = { askPermission(this@MainActivity) }
+                            askPermission = {
+                                askPermission(
+                                    this@MainActivity,
+                                    requestPermissionLauncher
+                                )
+                            }
                         )
                     }
                 }
@@ -454,9 +473,6 @@ class MainActivity : ComponentActivity() {
                 category
             )
         }
-        if (file != null)
-            viewModel.addDocument(file, category)
-        else Toast.makeText(this, getString(R.string.file_already_exists), Toast.LENGTH_SHORT)
-            .show()
+        viewModel.addDocument(file, category)
     }
 }

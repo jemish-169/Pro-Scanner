@@ -53,10 +53,9 @@ fun saveFileInDirectory(
     fileName: String,
     fileContent: File,
     category: String
-): Uri? {
+): Uri {
     val projDir = checkAndCreateChildDir(directory, category)
-    val file = File(projDir, "$fileName.pdf")
-    if (file.exists()) return null
+    val file = getUniqueFileName(projDir, fileName, "pdf")
     try {
         FileInputStream(fileContent).use { inputStream ->
             FileOutputStream(file).use { outputStream ->
@@ -75,7 +74,7 @@ fun saveFileInDirectory(
 
 fun renameAndMoveFile(directory: File, fileName: String, fileContent: File, category: String): Uri {
     val projDir = checkAndCreateChildDir(directory, category)
-    val to = File(projDir, "$fileName.pdf")
+    val to = getUniqueFileName(projDir, fileName, "pdf")
     if (projDir.exists() && fileContent.exists()) fileContent.renameTo(to)
     return to.toUri()
 }
@@ -140,10 +139,16 @@ fun saveFileToSelectedLocation(context: Context, destinationUri: Uri, originalFi
                 input.copyTo(output)
             }
         }
-        Toast.makeText(context, context.getString(R.string.file_copied_successfully), Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            context,
+            context.getString(R.string.file_copied_successfully),
+            Toast.LENGTH_SHORT
+        ).show()
     } catch (e: Exception) {
-        Toast.makeText(context,
-            context.getString(R.string.something_went_wrong_file_not_saved), Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            context,
+            context.getString(R.string.something_went_wrong_file_not_saved), Toast.LENGTH_SHORT
+        ).show()
 
     } finally {
         inputStream?.close()
@@ -173,7 +178,7 @@ fun deleteGivenFiles(context: Activity, uriList: List<Pair<Uri, String>>): List<
 suspend fun savePdfPagesAsImages(pdfFile: File, outputDir: File): Int {
     return withContext(Dispatchers.IO) {
         val savedImages = mutableListOf<File>()
-        val fileName = pdfFile.name
+        val fileName = pdfFile.name.dropLast(4)
         val parcelFileDescriptor =
             ParcelFileDescriptor.open(pdfFile, ParcelFileDescriptor.MODE_READ_ONLY)
         val pdfRenderer = PdfRenderer(parcelFileDescriptor)
@@ -184,7 +189,7 @@ suspend fun savePdfPagesAsImages(pdfFile: File, outputDir: File): Int {
             val bitmap = Bitmap.createBitmap(page.width, page.height, Bitmap.Config.ARGB_8888)
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
 
-            val outputFile = File(outputDir, "$fileName page_${pageIndex + 1}.png")
+            val outputFile = getUniqueFileName(outputDir, "$fileName page_${pageIndex + 1}", "png")
             FileOutputStream(outputFile).use { outStream ->
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream)
             }
