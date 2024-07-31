@@ -3,7 +3,6 @@
     <string name="pdfView_page_no" >%1$s / %2$s</string>
     <string name="back_icon">Back icon</string>
     <string name="share_icon">Share icon</string>
-    <string name="file_already_exists">File already exists</string>
     <string name="file_copied_successfully">File copied successfully.</string>
     <string name="saving_images">Saving images…</string>
     <string name="failed_to_save_images_try_again">Failed to save images, Try again.</string>
@@ -73,4 +72,5 @@
     <string name="finish">Finish</string>
     <string name="share_files">Share files</string>
     <string name="something_went_wrong_file_not_saved">Something went wrong, File not saved!</string>
+    <string name="permission_denied">Permission denied</string>
 </resources>

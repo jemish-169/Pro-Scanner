@@ -82,7 +82,6 @@ import com.app.scanner.ui.component.SwipeToDeleteContainer
 import com.app.scanner.util.Constants.Companion.ALL
 import com.app.scanner.util.Constants.Companion.SELECTED_FILES
 import com.app.scanner.util.Constants.Companion.SELECTED_FILE_NAME
-import com.app.scanner.util.askPermission
 import com.app.scanner.util.formatFileSize
 import com.app.scanner.util.pdfToBitmap
 import com.app.scanner.util.shareSelectedFiles
@@ -99,7 +98,8 @@ fun HomeScreen(
     onEditClick: (Pair<Uri, String>) -> Unit,
     duplicateFile: (Pair<Uri, String>) -> Unit,
     askFileSaveLocation: (Uri) -> Boolean,
-    saveFileAsImages: (Pair<Uri, String>) -> Boolean
+    saveFileAsImages: (Pair<Uri, String>) -> Boolean,
+    onPositiveClick: () -> Unit
 ) {
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
     val documentList by viewModel.documentList.collectAsState()
@@ -127,7 +127,7 @@ fun HomeScreen(
                 onNegativeClick = { showDialog = 0 },
                 onPositiveClick = {
                     showDialog = 0
-                    askPermission(context)
+                    onPositiveClick()
                 })
         }
     } else if (showDialog == 2) {

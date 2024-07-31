@@ -19,13 +19,18 @@
 
         <activity
             android:name=".activity.ViewPdfActivity"
-            android:exported="false"
+            android:exported="true"
             android:theme="@style/Theme.Scanner.PdfViewer">
 
             <intent-filter>
-                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:mimeType="application/pdf" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
             </intent-filter>
 
         </activity>

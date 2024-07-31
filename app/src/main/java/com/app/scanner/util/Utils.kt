@@ -12,8 +12,8 @@ import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.app.scanner.R
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
@@ -21,6 +21,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.RESULT_FORMAT_PDF
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions.SCANNER_MODE_FULL
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -83,7 +84,20 @@ fun showPermissionDialogFrequency(context: Activity): Boolean {
     return false
 }
 
-fun askPermission(context: Activity): Boolean {
+fun getUniqueFileName(directory: File, baseName: String, extension: String): File {
+    var file = File(directory, "$baseName.$extension")
+    var index = 1
+
+    while (file.exists()) {
+        file = File(directory, "$baseName ($index).$extension")
+        index++
+    }
+    return file
+}
+fun askPermission(
+    context: Activity,
+    requestPermissionLauncher: ActivityResultLauncher<String>
+): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         if (!Environment.isExternalStorageManager()) {
             val uri = Uri.parse("package:${context.packageName}")
@@ -95,9 +109,7 @@ fun askPermission(context: Activity): Boolean {
                 context, Manifest.permission.WRITE_EXTERNAL_STORAGE
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                context, arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1001
-            )
+            requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         } else return true
     }
     return false
