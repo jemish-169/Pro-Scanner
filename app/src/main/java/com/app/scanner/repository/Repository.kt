@@ -45,10 +45,16 @@ class Repository(private val context: Activity) {
         return _docList
     }
 
-
     fun getTheme(): Flow<ThemeOption> {
         return context.dataStore.data.map { preferences ->
-            when (preferences[THEME_KEY] ?: ThemeOption.DYNAMIC.ordinal) {
+            val theme =
+                if (preferences[THEME_KEY] != null) {
+                    preferences[THEME_KEY]
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    ThemeOption.DYNAMIC.ordinal
+                } else
+                    ThemeOption.SYSTEM.ordinal
+            when (theme) {
                 ThemeOption.LIGHT.ordinal -> ThemeOption.LIGHT
                 ThemeOption.DARK.ordinal -> ThemeOption.DARK
                 ThemeOption.SYSTEM.ordinal -> ThemeOption.SYSTEM
