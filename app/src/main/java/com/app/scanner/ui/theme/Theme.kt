@@ -73,7 +73,12 @@ fun AppTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
+                if (themeOption == ThemeOption.DYNAMIC) {
+                    if (colorScheme.primary.luminance() < 0.25f) false else true
+                } else {
+                    (darkTheme || themeOption == ThemeOption.DARK)
+                }
         }
     }
 
