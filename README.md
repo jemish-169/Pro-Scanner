@@ -29,8 +29,8 @@ The app is built using the MVVM pattern, which separates concerns and provides a
 
 | Home screen | Rename File and/or change category | Multiple select and funtionality |
 |-------------|-------------|-------------|
-| ![1](https://github.com/user-attachments/assets/6a5b1b00-7f7f-479f-8e7d-1a7d175ae42b) | ![2](https://github.com/user-attachments/assets/a6305fb2-8e57-4373-b316-762ba530fc63) | ![3](https://github.com/user-attachments/assets/2e739c44-213c-483f-a313-1c95198d5fe0) |
+| ![1](https://github.com/user-attachments/assets/b24c99c1-2d70-4d03-b5b4-4ac2bfe42135) | ![2](https://github.com/user-attachments/assets/9a0cec84-4d1c-44d1-a059-c97b19fa4ca2) | ![3](https://github.com/user-attachments/assets/8261b53d-b1fe-44e3-8574-9eaad9fd93d8) |
 
 | Search file | Scan file and/or choose form gallery | Manage settings of App |
 |-------------|-------------|-------------|
-| ![4](https://github.com/user-attachments/assets/7c294d57-6f37-418b-855a-9ccc27afd368) | ![5](https://github.com/user-attachments/assets/5205e9ca-2e5a-4234-a22e-da21d4b4f29b) | ![6](https://github.com/user-attachments/assets/b3038d95-88c4-4d4e-9139-b59ea3d5f48f) |
+| ![4](https://github.com/user-attachments/assets/d9f2c650-62b4-42a7-87a8-ac74a4270baa) | ![5](https://github.com/user-attachments/assets/26302d28-b486-4aa2-a24d-bf93fd5a9ec2) | ![6](https://github.com/user-attachments/assets/d07970eb-0ab8-4a88-a593-977f5f47d1d5) |
