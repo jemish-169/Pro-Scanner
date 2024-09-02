@@ -3,6 +3,7 @@ package com.app.scanner.repository
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import androidx.core.net.toFile
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey

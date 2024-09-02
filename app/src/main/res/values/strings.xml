@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Pro Scanner</string>
-    <string name="pdfView_page_no" >%1$s / %2$s</string>
+    <string name="pdfView_page_no">%1$s / %2$s</string>
     <string name="back_icon">Back icon</string>
     <string name="share_icon">Share icon</string>
     <string name="file_copied_successfully">File copied successfully.</string>
@@ -73,4 +73,7 @@
     <string name="share_files">Share files</string>
     <string name="something_went_wrong_file_not_saved">Something went wrong, File not saved!</string>
     <string name="permission_denied">Permission denied</string>
+    <string name="share_app_text">Just scanned the perfect document with Pro Scanner! Try it out, Download now!\nhttps://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="play_store_app_link">https://play.google.com/store/apps/details?id=%1$s</string>
+    <string name="privacy_policy_link">https://sites.google.com/view/pro-scanner-app-privacy/</string>
 </resources>

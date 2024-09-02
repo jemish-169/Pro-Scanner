@@ -1,6 +1,8 @@
 package com.app.scanner.ui.screens
 
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -138,31 +140,75 @@ fun SettingScreen(
             title = stringResource(R.string.files_management_in_app),
             subtitle = "We are using ${if (isAllowed) "External" else "Internal"} storage to manage files.",
             extraString = if (!isAllowed) stringResource(R.string.give_permission) else "",
-            askPermission
+            askPermission = askPermission
         )
 
         AppInformationItem(
             icon = R.drawable.share_24,
             title = stringResource(R.string.share_pro_scanner_app),
-            subtitle = stringResource(R.string.share_app_and_make_their_life_easy)
+            subtitle = stringResource(R.string.share_app_and_make_their_life_easy),
+            onClick = {
+                val appName = context.getString(R.string.app_name)
+                val textIntent = Intent(Intent.ACTION_SEND)
+                textIntent.type = "text/plain"
+
+                textIntent.putExtra(Intent.EXTRA_SUBJECT, appName)
+                val shareText = context.getString(R.string.share_app_text, context.packageName)
+                textIntent.putExtra(Intent.EXTRA_TEXT, shareText)
+
+                val chooserIntent = Intent.createChooser(textIntent, appName)
+                context.startActivity(chooserIntent)
+            }
         )
 
         AppInformationItem(
             icon = R.drawable.star_24,
             title = stringResource(R.string.rate_this_app),
-            subtitle = stringResource(R.string.rate_app_on_play_store)
+            subtitle = stringResource(R.string.rate_app_on_play_store),
+            onClick = {
+                context.startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(
+                            context.getString(
+                                R.string.play_store_app_link,
+                                context.packageName
+                            )
+                        )
+                    )
+                )
+            }
         )
 
         AppInformationItem(
             icon = R.drawable.rounded_lock_24,
             title = stringResource(R.string.privacy_policy),
-            subtitle = stringResource(R.string.read_this_app_s_privacy_policy)
+            subtitle = stringResource(R.string.read_this_app_s_privacy_policy),
+            onClick = {
+                context.startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse(
+                            context.getString(
+                                R.string.privacy_policy_link
+                            )
+                        )
+                    )
+                )
+            }
         )
 
         AppInformationItem(
             icon = R.drawable.round_commit_24,
             title = stringResource(R.string.version_number),
-            subtitle = versionName
+            subtitle = versionName,
+            onClick = {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.version_number) + ": $versionName",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         )
     }
 }
@@ -206,10 +252,11 @@ fun ThemeSelector(viewModel: MainViewModel) {
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) })
             ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 ThemeOption.entries.forEach { themeOption ->
-                    DropdownMenuItem(onClick = {
-                        viewModel.setTheme(themeOption)
-                        expanded = false
-                    },
+                    DropdownMenuItem(
+                        onClick = {
+                            viewModel.setTheme(themeOption)
+                            expanded = false
+                        },
                         text = {
                             Text(text = themeOption.displayName)
                         },
@@ -222,11 +269,12 @@ fun ThemeSelector(viewModel: MainViewModel) {
 }
 
 @Composable
-fun AppInformationItem(icon: Int, title: String, subtitle: String) {
+fun AppInformationItem(icon: Int, title: String, subtitle: String, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
+            .padding(8.dp)
+            .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
