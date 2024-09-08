@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.app.scanner"
+    namespace = "com.elite.scanner"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.app.scanner"
+        applicationId = "com.elite.scanner"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
