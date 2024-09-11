@@ -3,6 +3,10 @@
 ## Overview
 **Pro Scanner** is a powerful and user-friendly document scanner app built using Android with Jetpack Compose. The app follows the MVVM (Model-View-ViewModel) architecture to ensure a clean and maintainable codebase. Pro Scanner allows users to scan documents, save them as PDF files or images, and organize them efficiently.
 
+## Live Demo
+
+Get the Pro scanner app from Google Play: [https://play.google.com/store/apps/details?id=com.elite.scanner](https://play.google.com/store/apps/details?id=com.elite.scanner)
+
 ## Features
 - **Scan Documents**: Easily scan documents and save them in both internal and external storage with appropriate permissions.
 - **Swipe to Delete**: Users can delete PDF files with a simple swipe gesture.
