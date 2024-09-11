@@ -48,7 +48,7 @@
     <string name="duplicate_icon">Duplicate icon</string>
     <string name="duplicate">Duplicate</string>
     <string name="share">Share</string>
-    <string name="morevertical">MoreVertical</string>
+    <string name="moreVertical">MoreVertical</string>
     <string name="document_categories">Document Categories</string>
     <string name="swipe_pdf_item_to_delete">Swipe Pdf item to delete</string>
     <string name="app_information">App information</string>

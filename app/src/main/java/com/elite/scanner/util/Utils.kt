@@ -27,17 +27,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-fun checkPermission(context: Activity): Boolean {
-    val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        (Environment.isExternalStorageManager())
-    } else {
-        (ContextCompat.checkSelfPermission(
-            context, Manifest.permission.WRITE_EXTERNAL_STORAGE
-        ) == PackageManager.PERMISSION_GRANTED)
-    }
-    return result
-}
-
 fun getVersionName(context: Activity): String {
     var versionName = ""
     try {
@@ -76,14 +65,6 @@ fun getTodayDate(): String {
     return sdf.format(currentTime) + currentTime.toString().takeLast(8)
 }
 
-fun showPermissionDialogFrequency(context: Activity): Boolean {
-    if (!DateUtils.isToday(Preferences.getPermissionShowed()) && !checkPermission(context)) {
-        Preferences.setPermissionShowed(System.currentTimeMillis())
-        return true
-    }
-    return false
-}
-
 fun getUniqueFileName(directory: File, baseName: String, extension: String): File {
     var file = File(directory, "$baseName.$extension")
     var index = 1
@@ -93,26 +74,6 @@ fun getUniqueFileName(directory: File, baseName: String, extension: String): Fil
         index++
     }
     return file
-}
-fun askPermission(
-    context: Activity,
-    requestPermissionLauncher: ActivityResultLauncher<String>
-): Boolean {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        if (!Environment.isExternalStorageManager()) {
-            val uri = Uri.parse("package:${context.packageName}")
-            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, uri)
-            context.startActivity(intent)
-        } else return true
-    } else {
-        if (ContextCompat.checkSelfPermission(
-                context, Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        } else return true
-    }
-    return false
 }
 
 fun scanDoc(

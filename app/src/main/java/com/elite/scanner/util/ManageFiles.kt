@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
-import android.os.Environment
 import android.os.ParcelFileDescriptor
 import android.widget.Toast
 import androidx.core.content.FileProvider
@@ -21,16 +20,6 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.Locale
-
-fun checkAndCreateExternalParentDir(parentDir: String = PRO_SCANNER): File {
-    val dirPath: String =
-        Environment.getExternalStorageDirectory().absolutePath + File.separator + parentDir
-    val projDir = File(dirPath)
-    if (!projDir.exists())
-        projDir.mkdirs()
-
-    return projDir
-}
 
 fun checkAndCreateInternalParentDir(context: Activity): File {
     val dirPath: String = context.filesDir.absolutePath + File.separator + PRO_SCANNER

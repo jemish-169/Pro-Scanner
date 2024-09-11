@@ -73,9 +73,7 @@ fun SettingScreen(
     context: Activity,
     viewModel: MainViewModel,
     innerPadding: PaddingValues,
-    versionName: String,
-    isAllowed: Boolean,
-    askPermission: () -> Unit
+    versionName: String
 ) {
 
     var isSwipeToDeleteEnable by remember { mutableStateOf(viewModel.getIsSwipeToDeleteEnable()) }
@@ -138,9 +136,7 @@ fun SettingScreen(
         AppInfoAnnotatedItem(
             icon = R.drawable.info,
             title = stringResource(R.string.files_management_in_app),
-            subtitle = "We are using ${if (isAllowed) "External" else "Internal"} storage to manage files.",
-            extraString = if (!isAllowed) stringResource(R.string.give_permission) else "",
-            askPermission = askPermission
+            subtitle = "We are using Internal storage to manage files."
         )
 
         AppInformationItem(
@@ -299,7 +295,7 @@ fun AppInformationItem(icon: Int, title: String, subtitle: String, onClick: () -
 
 @Composable
 fun AppInfoAnnotatedItem(
-    icon: Int, title: String, subtitle: String, extraString: String, askPermission: () -> Unit
+    icon: Int, title: String, subtitle: String
 ) {
     Row(
         modifier = Modifier
@@ -321,18 +317,6 @@ fun AppInfoAnnotatedItem(
             Text(
                 text = subtitle, fontSize = 14.sp, style = MaterialTheme.typography.bodySmall
             )
-            if (extraString.isNotEmpty()) {
-                Text(
-                    text = extraString,
-                    textDecoration = TextDecoration.Underline,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 14.sp,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight(450),
-                    modifier = Modifier.clickable(onClick = { askPermission() })
-                )
-            }
         }
     }
 }

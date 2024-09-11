@@ -93,17 +93,15 @@ fun HomeScreen(
     viewModel: MainViewModel,
     context: Activity,
     innerPadding: PaddingValues,
-    isShowDialog: Int,
     isSwipeToDeleteEnable: Boolean,
     onEditClick: (Pair<Uri, String>) -> Unit,
     duplicateFile: (Pair<Uri, String>) -> Unit,
-    askFileSaveLocation: (Uri) -> Boolean,
-    saveFileAsImages: (Pair<Uri, String>) -> Boolean,
-    onPositiveClick: () -> Unit
+    askFileSaveLocation: (Uri) -> Unit,
+//    saveFileAsImages: (Pair<Uri, String>) -> Unit
 ) {
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
     val documentList by viewModel.documentList.collectAsState()
-    var showDialog by remember { mutableIntStateOf(isShowDialog) }
+    var showDialog by remember { mutableStateOf(false) }
     var isSearchVisible by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     var isSelectionMode by remember { mutableStateOf(false) }
@@ -115,23 +113,8 @@ fun HomeScreen(
     LaunchedEffect(isSearchVisible) {
         if (isSearchVisible) focusRequester.requestFocus()
     }
-    if (showDialog == 1) {
-        CustomDialog(onDismissRequest = { showDialog = 0 }) {
-            DialogContent(icon = R.drawable.warning_24,
-                iconTint = MaterialTheme.colorScheme.onSurface,
-                iconDesc = stringResource(R.string.warning),
-                titleText = stringResource(R.string.need_permission),
-                descText = stringResource(R.string.pro_scanner_requires_permission_to_manage_pdf_files),
-                positiveBtn = stringResource(R.string.allow),
-                negativeBtn = stringResource(R.string.deny),
-                onNegativeClick = { showDialog = 0 },
-                onPositiveClick = {
-                    showDialog = 0
-                    onPositiveClick()
-                })
-        }
-    } else if (showDialog == 2) {
-        CustomDialog(onDismissRequest = { showDialog = 0 }) {
+    if (showDialog) {
+        CustomDialog(onDismissRequest = { showDialog = false }) {
             DialogContent(icon = R.drawable.delete_24,
                 iconTint = MaterialTheme.colorScheme.error,
                 iconDesc = stringResource(R.string.delete),
@@ -140,13 +123,13 @@ fun HomeScreen(
                 positiveBtn = stringResource(R.string.continue_word),
                 negativeBtn = stringResource(R.string.cancel),
                 onNegativeClick = {
-                    showDialog = 0
+                    showDialog = false
                     selectedItems.value = emptySet()
                     isSelectionMode = false
                     isFileDeleted = false
                 },
                 onPositiveClick = {
-                    showDialog = 0
+                    showDialog = false
                     if (viewModel.deleteSelectedFiles(
                             context, selectedItems.value.toList()
                         )
@@ -249,7 +232,7 @@ fun HomeScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                            onClick = { showDialog = 2 },
+                            onClick = { showDialog = true },
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.delete_24),
@@ -452,17 +435,17 @@ fun HomeScreen(
                                 shareFile = { shareSelectedFiles(context, listOf(item)) },
                                 deleteFile = {
                                     selectedItems.value = setOf(item)
-                                    showDialog = 2
+                                    showDialog = true
                                 },
                                 askFileSaveLocation = {
-                                    if (!askFileSaveLocation(item.first)) showDialog = 1
+                                    askFileSaveLocation(item.first)
                                 },
-                                saveFileAsImages = { if (!saveFileAsImages(item)) showDialog = 1 }
+//                                saveFileAsImages = {saveFileAsImages(item)}
                             )
                         },
                         onDelete = { uri ->
                             selectedItems.value = setOf(uri)
-                            showDialog = 2
+                            showDialog = true
                             isFileDeleted
                         })
                 }
@@ -480,7 +463,7 @@ fun ItemPdf(
     isSelected: Boolean,
     onEditClick: () -> Unit,
     isInSelectionMode: Boolean,
-    saveFileAsImages: () -> Unit,
+//    saveFileAsImages: () -> Unit,
     duplicateFile: () -> Unit,
     shareFile: () -> Unit,
     deleteFile: () -> Unit,
@@ -528,6 +511,7 @@ fun ItemPdf(
                 stringResource(R.string.save_to_storage)
             )
         })
+        /*
         DropdownMenuItem(onClick = {
             isExpanded = false
             saveFileAsImages()
@@ -538,6 +522,7 @@ fun ItemPdf(
                 stringResource(R.string.save_as_images)
             )
         })
+         */
         DropdownMenuItem(
             modifier = Modifier.padding(0.dp),
             onClick = {
@@ -651,7 +636,7 @@ fun ItemPdf(
                     }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = stringResource(R.string.morevertical),
+                            contentDescription = stringResource(R.string.moreVertical),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }

@@ -3,7 +3,6 @@ package com.elite.scanner.activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -64,17 +63,13 @@ import com.elite.scanner.ui.screens.SettingScreen
 import com.elite.scanner.ui.screens.WelcomeScreen
 import com.elite.scanner.ui.theme.AppTheme
 import com.elite.scanner.util.Preferences
-import com.elite.scanner.util.askPermission
-import com.elite.scanner.util.checkAndCreateExternalParentDir
 import com.elite.scanner.util.checkAndCreateInternalParentDir
-import com.elite.scanner.util.checkPermission
 import com.elite.scanner.util.getTodayDate
 import com.elite.scanner.util.getVersionName
 import com.elite.scanner.util.renameAndMoveFile
 import com.elite.scanner.util.saveFileInDirectory
 import com.elite.scanner.util.saveFileToSelectedLocation
 import com.elite.scanner.util.scanDoc
-import com.elite.scanner.util.showPermissionDialogFrequency
 import com.elite.scanner.viewModel.MainViewModel
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import kotlinx.coroutines.launch
@@ -83,13 +78,13 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var repository: Repository
     private lateinit var viewModel: MainViewModel
-    private var isAllowed by mutableStateOf(false)
     private lateinit var originalFile: Uri
-    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(R.style.Theme_Scanner)
+
+        Preferences.getInstance(applicationContext)
 
         repository = Repository(context = this@MainActivity)
 
@@ -113,26 +108,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-        requestPermissionLauncher = registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            Log.e("TAG", "onCreate: launcher $isGranted")
-            isAllowed = isGranted
-        }
-
-        Preferences.getInstance(applicationContext)
-
         setContent {
             val theme = viewModel.theme.collectAsState().value
             AppTheme(theme) {
                 MainScreen(saveFileToSelectedLocLauncher)
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        isAllowed = checkPermission(this)
     }
 
     @OptIn(ExperimentalAnimationApi::class)
@@ -161,7 +142,7 @@ class MainActivity : ComponentActivity() {
                 onDismiss = { showDialog = 0 },
                 onSave = { fileName, category ->
                     showDialog = 0
-                    saveFile(fileName, recentSavedFileUri, isAllowed, category)
+                    saveFile(fileName, recentSavedFileUri, category)
                 }
             )
         } else if (showDialog == 2) {
@@ -173,7 +154,7 @@ class MainActivity : ComponentActivity() {
                 onDismiss = { showDialog = 0 },
                 onSave = { fileName, category ->
                     showDialog = 0
-                    renameFile(fileName, recentSavedFileUri, isAllowed, selectedCategory, category)
+                    renameFile(fileName, recentSavedFileUri, selectedCategory, category)
                 }
             )
         }
@@ -242,7 +223,6 @@ class MainActivity : ComponentActivity() {
                             viewModel,
                             context = this@MainActivity,
                             innerPadding,
-                            if (showPermissionDialogFrequency(context = this@MainActivity)) 1 else 0,
                             viewModel.getIsSwipeToDeleteEnable(),
                             onEditClick = { uri ->
                                 selectedCategory = uri.second
@@ -255,43 +235,21 @@ class MainActivity : ComponentActivity() {
                                         item.first.lastPathSegment?.dropLast(4)
                                             ?: getString(R.string.pro_scan_copy, getTodayDate()),
                                         item.first,
-                                        isAllowed,
                                         item.second
                                     )
                                     snackBarHostState.showSnackbar(getString(R.string.file_copied_successfully))
                                 }
                             },
                             askFileSaveLocation = { originalUri ->
-                                if (isAllowed) {
-                                    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                                        type = "application/pdf"
-                                        putExtra(Intent.EXTRA_TITLE, originalUri.lastPathSegment)
-                                        addCategory(Intent.CATEGORY_OPENABLE)
-                                    }
-                                    originalFile = originalUri
-                                    saveFileToSelectedLocLauncher.launch(intent)
-                                    true
-                                } else {
-                                    false
+                                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                                    type = "application/pdf"
+                                    putExtra(Intent.EXTRA_TITLE, originalUri.lastPathSegment)
+                                    addCategory(Intent.CATEGORY_OPENABLE)
                                 }
+                                originalFile = originalUri
+                                saveFileToSelectedLocLauncher.launch(intent)
                             },
-                            saveFileAsImages = { image ->
-                                if (isAllowed) {
-                                    scope.launch {
-                                        snackBarHostState.showSnackbar(getString(R.string.saving_images))
-                                        val count = viewModel.saveFileAsImages(image)
-                                        if (count == 0) snackBarHostState.showSnackbar(getString(R.string.failed_to_save_images_try_again))
-                                        else snackBarHostState.showSnackbar("$count ${if (count == 1) "Image" else "Images"} saved.")
-                                    }
-                                    true
-                                } else false
-                            },
-                            onPositiveClick = {
-                                askPermission(
-                                    this@MainActivity,
-                                    requestPermissionLauncher
-                                )
-                            }
+//                            saveFileAsImages = { }
                         )
                     }
                     composable<SettingScreen>(
@@ -324,14 +282,7 @@ class MainActivity : ComponentActivity() {
                             this@MainActivity,
                             viewModel,
                             innerPadding,
-                            getVersionName(this@MainActivity),
-                            isAllowed,
-                            askPermission = {
-                                askPermission(
-                                    this@MainActivity,
-                                    requestPermissionLauncher
-                                )
-                            }
+                            getVersionName(this@MainActivity)
                         )
                     }
                 }
@@ -434,45 +385,29 @@ class MainActivity : ComponentActivity() {
     private fun renameFile(
         newFileName: String,
         uri: Uri,
-        isAllowed: Boolean,
         oldCategory: String,
         category: String
     ) {
         viewModel.removeDocument(uri, oldCategory)
-        val file = if (isAllowed) {
-            renameAndMoveFile(
-                checkAndCreateExternalParentDir(),
-                newFileName,
-                uri.toFile(),
-                category
-            )
-        } else {
-            renameAndMoveFile(
-                checkAndCreateInternalParentDir(this),
-                newFileName,
-                uri.toFile(),
-                category
-            )
-        }
+        val file = renameAndMoveFile(
+            checkAndCreateInternalParentDir(this),
+            newFileName,
+            uri.toFile(),
+            category
+        )
+
         viewModel.addDocument(file, category)
     }
 
-    private fun saveFile(fileName: String, uri: Uri, isAllowed: Boolean, category: String) {
-        val file = if (isAllowed) {
-            saveFileInDirectory(
-                checkAndCreateExternalParentDir(),
-                fileName,
-                uri.toFile(),
-                category
-            )
-        } else {
+    private fun saveFile(fileName: String, uri: Uri, category: String) {
+        val file =
             saveFileInDirectory(
                 checkAndCreateInternalParentDir(this@MainActivity),
                 fileName,
                 uri.toFile(),
                 category
             )
-        }
+
         viewModel.addDocument(file, category)
     }
 }

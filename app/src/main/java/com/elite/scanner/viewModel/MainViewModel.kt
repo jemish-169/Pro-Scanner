@@ -12,7 +12,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainViewModel(private val repository: Repository) : ViewModel() {
@@ -22,19 +21,19 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     private val _categoryList = MutableStateFlow<List<String>>(emptyList())
     val categoryList: StateFlow<List<String>> = _categoryList.asStateFlow()
 
-    private val _theme = MutableStateFlow(ThemeOption.DYNAMIC)
+    private val _theme = MutableStateFlow(ThemeOption.SYSTEM)
     val theme: StateFlow<ThemeOption> = _theme
 
     init {
         viewModelScope.launch {
-            _theme.value = repository.getTheme().first()
+            _theme.value = Preferences.getTheme()
         }
         getFilesIfNeeded()
     }
 
     fun setTheme(themeOption: ThemeOption) {
         viewModelScope.launch {
-            repository.setTheme(themeOption)
+            Preferences.setTheme(themeOption)
             _theme.value = themeOption
         }
     }
@@ -93,13 +92,5 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
     fun removeCategoryFromList(category: String) {
         _categoryList.value -= category
         setCategoryList(_categoryList.value)
-    }
-
-    suspend fun saveFileAsImages(image: Pair<Uri, String>): Int {
-        var count = 0
-        viewModelScope.async {
-            count = repository.saveFileAsImages(image)
-        }.await()
-        return count
     }
 }
