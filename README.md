@@ -33,7 +33,8 @@ The app is built using the MVVM pattern, which separates concerns and provides a
 
 | Home screen | Rename and/or change category | Multiple select |
 |-------------|-------------|-------------|
-| ![1](https://github.com/user-attachments/assets/b24c99c1-2d70-4d03-b5b4-4ac2bfe42135) | ![2](https://github.com/user-attachments/assets/9a0cec84-4d1c-44d1-a059-c97b19fa4ca2) | ![3](https://github.com/user-attachments/assets/8261b53d-b1fe-44e3-8574-9eaad9fd93d8) |
+| ![1](https://github.com/user-attachments/assets/f9a4ecd2-8e38-4244-81f3-1451dc2e6564) | ![2](https://github.com/user-attachments/assets/1217b112-4f20-43ca-929d-e0801a74bd55)  | ![3](https://github.com/user-attachments/assets/d0e54b8b-a251-408c-a725-a3e997579c00) |
+
 
 | Scan/upload doc | Retouch document | Manage settings |
 |-------------|-------------|-------------|
